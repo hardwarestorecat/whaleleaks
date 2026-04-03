@@ -38,7 +38,7 @@
   #view-live { flex-direction: row; }
   .panel { display: flex; flex-direction: column; border-right: 1px solid var(--border); min-height: 0; flex: 1; }
   .panel:last-child { border-right: none; }
-  .panel.narrow { flex: 0 0 260px; }
+  .panel.narrow  { flex: 0 0 260px; }
   .panel-header { padding: 8px 14px; border-bottom: 1px solid var(--border); background: var(--surface); font-weight: 600; font-size: 11px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
   .panel-header .badge { background: var(--border); border-radius: 8px; padding: 1px 6px; font-size: 10px; }
   .panel-body { overflow-y: auto; flex: 1; }
@@ -52,7 +52,7 @@
   .new { animation: newflash .9s ease forwards; }
 
   /* Order flow */
-  .flow-row { padding: 7px 14px; border-bottom: 1px solid rgba(48,54,61,.5); display: flex; align-items: center; gap: 10px; font-size: 12px; transition: background .1s; }
+  .flow-row { padding: 7px 14px; border-bottom: 1px solid rgba(48,54,61,.5); display: flex; align-items: flex-start; gap: 10px; font-size: 12px; transition: background .1s; }
   .flow-row.whale-hl { background: rgba(227,179,65,.07); }
   .flow-row.geo-hl { border-left: 2px solid var(--blue); }
   .flow-row:hover { background: rgba(255,255,255,.03) !important; }
@@ -68,8 +68,9 @@
   .flow-odds.outcome { color: var(--purple); }
 
   .flow-body { flex: 1; min-width: 0; }
-  .flow-market { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .flow-market { white-space: normal; word-break: break-word; line-height: 1.3; }
   .flow-meta { color: var(--muted); font-size: 10px; margin-top: 1px; }
+  .flow-profit { font-size: 10px; margin-top: 1px; color: var(--yes); }
   .flow-right { text-align: right; flex-shrink: 0; }
   .flow-usd { font-weight: 600; font-size: 12px; }
   .flow-usd.whale { color: var(--gold); }
@@ -142,6 +143,26 @@
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* Address modal */
+  #addr-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 100; align-items: center; justify-content: center; }
+  #addr-modal.open { display: flex; }
+  #addr-modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; width: min(860px, 95vw); max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; }
+  #addr-modal-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  #addr-modal-title { font-size: 13px; font-weight: 700; }
+  #addr-modal-stats { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  #addr-modal-close { cursor: pointer; color: var(--muted); font-size: 18px; line-height: 1; padding: 2px 6px; border-radius: 4px; }
+  #addr-modal-close:hover { background: rgba(255,255,255,.07); color: var(--text); }
+  #addr-modal-body { overflow-y: auto; flex: 1; }
+  .fill-row { display: grid; grid-template-columns: 80px 1fr 60px 80px 80px 80px 70px; gap: 8px; align-items: center; padding: 7px 16px; border-bottom: 1px solid rgba(48,54,61,.4); font-size: 11px; }
+  .fill-row.header { background: var(--surface); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; position: sticky; top: 0; border-bottom: 1px solid var(--border); }
+  .fill-row:not(.header):hover { background: rgba(255,255,255,.02); }
+  .fill-outcome { font-weight: 700; }
+  .fill-outcome.win  { color: var(--yes); }
+  .fill-outcome.loss { color: var(--no); }
+  .fill-outcome.push { color: var(--muted); }
+  .fill-outcome.open { color: var(--blue); }
+  .addr-clickable { cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 </style>
 </head>
 <body>
@@ -180,6 +201,29 @@
   </div>
 </div>
 
+<!-- Address history modal -->
+<div id="addr-modal" onclick="if(event.target===this)closeAddrModal()">
+  <div id="addr-modal-box">
+    <div id="addr-modal-header">
+      <div>
+        <div id="addr-modal-title"></div>
+        <div id="addr-modal-stats"></div>
+      </div>
+      <div id="addr-modal-close" onclick="closeAddrModal()">✕</div>
+    </div>
+    <div id="addr-modal-body">
+      <div class="fill-row header">
+        <span>Date</span><span>Market</span><span>Side</span>
+        <span style="text-align:right">Price</span>
+        <span style="text-align:right">Spent</span>
+        <span style="text-align:right">P&amp;L</span>
+        <span style="text-align:right">Result</span>
+      </div>
+      <div id="addr-fills"></div>
+    </div>
+  </div>
+</div>
+
 <!-- Markets Tab -->
 <div class="view" id="view-markets">
   <div class="market-toolbar">
@@ -200,10 +244,13 @@
 <script>
 const fmt = {
   usd:  v => '$' + Number(v).toLocaleString('en-US', {maximumFractionDigits:0}),
-  addr: a => a ? a.slice(0,6)+'…'+a.slice(-4) : '—',
+  addr: (a, full=false) => a ? `<span class="addr addr-clickable" onclick="openAddrModal('${a}')" title="${a}">${a.slice(0,6)}…${a.slice(-4)}</span>` : '—',
+  addrText: a => a ? a.slice(0,6)+'…'+a.slice(-4) : '—',
   ts:   s => new Date(s).toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),
+  date: s => new Date(s).toLocaleDateString('en-US', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}),
   vol:  v => v >= 1e6 ? '$'+(v/1e6).toFixed(1)+'M' : v >= 1e3 ? '$'+(v/1e3).toFixed(0)+'K' : '$'+Math.round(v),
   ago:  s => { const d = Math.floor((Date.now()-new Date(s))/1000); return d < 60 ? d+'s ago' : Math.floor(d/60)+'m ago'; },
+  pnl:  v => v == null ? '—' : (v >= 0 ? '+' : '') + '$' + Math.abs(v).toLocaleString('en-US', {maximumFractionDigits:0}),
 };
 
 let flowCount = 0, whaleCount = 0;
@@ -345,6 +392,8 @@ async function loadHistory() {
         const sideCls  = isBinary ? side : 'outcome';
         const sideLabel = isBinary ? side.toUpperCase() : (row.side || '?');
         const div = document.createElement('div');
+        const rProfit = row.potential_profit != null ? fmt.usd(row.potential_profit) : null;
+        const rMult   = row.return_multiple  != null ? row.return_multiple.toFixed(2) + '×' : null;
         div.className = 'flow-row' + (row.is_whale ? ' whale-hl' : '') + (row.is_geopolitical && !row.is_whale ? ' geo-hl' : '');
         div.innerHTML = `
           <div class="flow-side">
@@ -354,6 +403,7 @@ async function loadHistory() {
           <div class="flow-body">
             <div class="flow-market">${row.market_title}</div>
             <div class="flow-meta">${fmt.addr(row.address)}</div>
+            ${rProfit ? `<div class="flow-profit">wins ${rProfit} (${rMult})</div>` : ''}
           </div>
           ${row.is_whale ? '<span class="whale-tag">WHALE</span>' : ''}
           ${row.is_geopolitical && !row.is_whale ? '<span class="geo-tag">GEO</span>' : ''}
@@ -375,13 +425,67 @@ async function loadHistory() {
     if (data.length) {
       const feed = document.getElementById('alert-feed');
       feed.innerHTML = '';
-      data.forEach(a => feed.appendChild(buildAlertEl(a, false)));
+      const seenTx = new Set();
+      data.forEach(a => {
+        const key = a.tx_hash || (a.market_id + '|' + a.ts);
+        if (seenTx.has(key)) return;
+        seenTx.add(key);
+        feed.appendChild(buildAlertEl(a, false));
+      });
       whaleCount = feed.querySelectorAll('.alert-item').length;
       document.getElementById('whale-count').textContent = whaleCount;
     }
   } catch(e) {}
 }
 loadHistory();
+
+// ── Address modal ────────────────────────────────────────────────────────────
+async function openAddrModal(address) {
+  document.getElementById('addr-modal').classList.add('open');
+  document.getElementById('addr-modal-title').textContent = address;
+  document.getElementById('addr-modal-stats').textContent = 'Loading…';
+  document.getElementById('addr-fills').innerHTML = '';
+  try {
+    const d = await fetch(`/api/address/${address}`).then(r => r.json());
+    const s = d.stats;
+    if (s) {
+      const wr = s.win_rate != null ? (s.win_rate * 100).toFixed(1) + '%' : 'n/a';
+      const pnl = s.total_pnl_usd >= 0 ? `+$${s.total_pnl_usd.toLocaleString('en-US',{maximumFractionDigits:0})}` : `-$${Math.abs(s.total_pnl_usd).toLocaleString('en-US',{maximumFractionDigits:0})}`;
+      document.getElementById('addr-modal-stats').textContent =
+        `Win rate: ${wr} · ${s.resolved_fills} resolved · ${s.total_fills} total bets · P&L: ${pnl}`;
+    } else {
+      document.getElementById('addr-modal-stats').textContent = 'No history yet';
+    }
+    const el = document.getElementById('addr-fills');
+    if (!d.fills.length) { el.innerHTML = '<div class="empty">No fills on record</div>'; return; }
+    el.innerHTML = d.fills.map(f => {
+      const outcome = f.outcome || 'open';
+      const pnlVal  = f.pnl_usd;
+      const pnlStr  = pnlVal != null
+        ? `<span class="${pnlVal >= 0 ? 'pos' : 'neg'}">${pnlVal >= 0 ? '+' : ''}$${Math.abs(pnlVal).toLocaleString('en-US',{maximumFractionDigits:0})}</span>`
+        : '—';
+      const side = (f.side || '').toLowerCase();
+      const sideCls = side === 'yes' ? 'yes' : side === 'no' ? 'no' : '';
+      return `<div class="fill-row">
+        <span style="color:var(--muted)">${fmt.date(f.ts)}</span>
+        <span title="${f.market_title}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.market_title}</span>
+        <span class="${sideCls}" style="font-weight:700">${(f.side||'').toUpperCase()}</span>
+        <span style="text-align:right;color:var(--muted)">${f.price_cents}¢</span>
+        <span style="text-align:right;font-weight:600">$${f.usd_value.toLocaleString('en-US',{maximumFractionDigits:0})}</span>
+        <span style="text-align:right">${pnlStr}</span>
+        <span style="text-align:right" class="fill-outcome ${outcome}">${outcome.toUpperCase()}</span>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('addr-modal-stats').textContent = 'Failed to load';
+  }
+}
+
+function closeAddrModal() {
+  document.getElementById('addr-modal').classList.remove('open');
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAddrModal(); });
 
 // ── SSE ──────────────────────────────────────────────────────────────────────
 function connectSSE() {
@@ -410,6 +514,8 @@ function addFlowRow(d) {
   const sideCls  = isBinary ? side : 'outcome';
   const sideLabel = isBinary ? side.toUpperCase() : (d.side || '?');
   const oddsLabel = d.price_cents + '¢';
+  const profit = d.potential_profit != null ? fmt.usd(d.potential_profit) : null;
+  const mult   = d.return_multiple  != null ? d.return_multiple.toFixed(2) + '×' : null;
   div.className = 'flow-row new' + (d.is_whale ? ' whale-hl' : '') + (d.is_geopolitical && !d.is_whale ? ' geo-hl' : '');
   div.innerHTML = `
     <div class="flow-side">
@@ -419,6 +525,7 @@ function addFlowRow(d) {
     <div class="flow-body">
       <div class="flow-market">${d.market_title}</div>
       <div class="flow-meta">${fmt.addr(d.address)}</div>
+      ${profit ? `<div class="flow-profit">wins ${profit} (${mult})</div>` : ''}
     </div>
     ${d.is_whale ? '<span class="whale-tag">WHALE</span>' : ''}
     ${d.is_geopolitical && !d.is_whale ? '<span class="geo-tag">GEO</span>' : ''}
@@ -458,12 +565,14 @@ function buildAlertEl(a, isNew=false) {
   }
   const div = document.createElement('div');
   div.className = 'alert-item' + (isNew ? ' new' : '');
+  const profit = a.potential_profit != null ? fmt.usd(a.potential_profit) : null;
+  const mult   = a.return_multiple  != null ? a.return_multiple.toFixed(2) + '×' : null;
   div.innerHTML = `
     <div class="side-badge ${side}">${side==='yes'?'YES':side==='no'?'NO':'?'}</div>
     <div>
       <div class="alert-market">${a.market_title||a.market_id}</div>
-      <div class="alert-meta">${a.price_cents}¢ / share</div>
-      ${a.whale_address?`<div class="alert-whale"><span class="addr">${fmt.addr(a.whale_address)}</span>${pill}</div>`:''}
+      <div class="alert-meta">${a.price_cents}¢ / share${profit ? ` · wins <strong style="color:var(--yes)">${profit}</strong> (${mult})` : ''}</div>
+      ${a.whale_address?`<div class="alert-whale">${fmt.addr(a.whale_address)}${pill}</div>`:''}
     </div>
     <div class="alert-right">
       <div class="alert-usd">${fmt.usd(a.usd_value)}</div>

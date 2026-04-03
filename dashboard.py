@@ -19,6 +19,7 @@ from typing import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 
+import config
 from db import database as db
 
 app = FastAPI(title="whaleleaks")
@@ -26,7 +27,6 @@ app = FastAPI(title="whaleleaks")
 _start_time = time.time()
 _markets_count: int = 0
 _subscribers: list[asyncio.Queue] = []
-_market_highs: dict[str, dict] = {}   # condition_id -> highest fill seen
 
 
 # ─── SSE broadcast (called by listener on each whale alert) ──────────────────
@@ -48,13 +48,6 @@ def broadcast_flow(flow_dict: dict) -> None:
     _push("flow", flow_dict)
 
 
-def record_fill(condition_id: str, fill: dict) -> None:
-    """Keep track of the largest fill seen per market (in-memory)."""
-    existing = _market_highs.get(condition_id)
-    if existing is None or fill["usd_value"] > existing["usd_value"]:
-        _market_highs[condition_id] = fill
-
-
 def set_markets_count(n: int) -> None:
     global _markets_count
     _markets_count = n
@@ -72,7 +65,7 @@ async def stats():
     conn = db._conn()
     alert_count_today = conn.execute(
         "SELECT COUNT(*) FROM fills WHERE ts >= date('now') AND usd_value >= ?",
-        (0,),
+        (config.WHALE_THRESHOLD_USD,),
     ).fetchone()[0]
     total_addresses = conn.execute("SELECT COUNT(*) FROM addresses").fetchone()[0]
     uptime_s = int(time.time() - _start_time)
@@ -112,11 +105,20 @@ async def top_whales(limit: int = 25):
 @app.get("/api/markets")
 async def tracked_markets():
     from polymarket.market_cache import get_markets
+    from store import flow_store
     markets = await get_markets()
+    highs = flow_store.get_all_market_highs()
     return [
-        {**m, "top_fill": _market_highs.get(m["condition_id"])}
+        {**m, "top_fill": highs.get(m["condition_id"])}
         for m in markets
     ]
+
+
+@app.get("/api/address/{address}")
+async def address_detail(address: str):
+    stats = db.get_address_stats(address)
+    fills = db.get_address_fills(address)
+    return {"stats": stats, "fills": fills}
 
 
 @app.get("/api/flow")

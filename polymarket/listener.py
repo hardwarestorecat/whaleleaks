@@ -17,8 +17,8 @@ import aiohttp
 import config
 from alerts.models import WhaleAlert
 from alerts.dispatcher import dispatch
-from dashboard import record_fill
 from db import database as db
+from store import flow_store
 from utils.market_filter import is_geopolitical, matched_keywords
 
 log = logging.getLogger("polymarket.listener")
@@ -106,8 +106,8 @@ async def _handle(trade: dict, on_whale: WhaleCB | None, on_flow: FlowCB | None)
     quantity     = size
     geo          = is_geopolitical(title)
 
-    # Persist for win-rate tracking
-    if usd_value >= 100 and maker:
+    # Persist for win-rate tracking (only bets >= $500 count toward leaderboard)
+    if usd_value >= 500 and maker:
         db.save_fill(
             tx_hash=tx_hash, block_number=0, address=maker, role="maker",
             condition_id=condition_id, market_title=title, side=side,
@@ -115,21 +115,26 @@ async def _handle(trade: dict, on_whale: WhaleCB | None, on_flow: FlowCB | None)
             usd_value=usd_value, ts=ts,
         )
 
-    # Track largest fill per market
+    # Track largest fill per market (weekly high, Redis-backed)
     if usd_value >= config.FLOW_THRESHOLD_USD:
-        record_fill(condition_id, {
+        await flow_store.set_market_high(condition_id, {
             "usd_value": usd_value, "side": side,
             "price_cents": price_cents, "address": maker, "ts": ts,
         })
 
     # Flow panel — everything >= FLOW_THRESHOLD
     if on_flow and usd_value >= config.FLOW_THRESHOLD_USD:
+        price_frac = price_cents / 100
+        pot_payout = round(usd_value / price_frac, 2) if price_frac else 0
         await on_flow({
             "market_title": title,
             "market_id": slug or condition_id,
             "side": side,
             "price_cents": price_cents,
             "usd_value": usd_value,
+            "potential_payout": pot_payout,
+            "potential_profit": round(pot_payout - usd_value, 2),
+            "return_multiple": round(1 / price_frac, 2) if price_frac else 0,
             "address": maker,
             "ts": ts,
             "is_whale": usd_value >= config.WHALE_THRESHOLD_USD,
@@ -139,6 +144,13 @@ async def _handle(trade: dict, on_whale: WhaleCB | None, on_flow: FlowCB | None)
     # Whale alert — any trade >= threshold
     if usd_value < config.WHALE_THRESHOLD_USD:
         return
+
+    # Dedup by tx_hash (cross-restart) and composite fingerprint (same-session dupes)
+    fingerprint = f"{maker}:{usd_value:.2f}:{ts_raw}"
+    if await flow_store.is_whale_seen(tx_hash) or await flow_store.is_whale_seen(fingerprint):
+        return
+
+    await flow_store.mark_whale_seen(fingerprint)
 
     alert = WhaleAlert(
         source="polymarket",
@@ -161,9 +173,9 @@ async def _handle(trade: dict, on_whale: WhaleCB | None, on_flow: FlowCB | None)
             alert.whale_resolved_bets = stats["resolved_fills"]
             alert.whale_total_pnl   = stats["total_pnl_usd"]
 
-    # Discord only for geopolitical markets
-    if geo:
-        await dispatch(alert)
+    await flow_store.mark_whale_seen(tx_hash)
+
+    await dispatch(alert)
 
     if on_whale:
         await on_whale(alert)

@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 DB_PATH = Path("whaleleaks.db")
+MIN_BET_USD = 500.0   # only count bets >= this for win-rate / leaderboard
 
 _local = threading.local()
 
@@ -197,25 +198,50 @@ def apply_outcome(condition_id: str, winning_side: str, resolved_at: str) -> Non
 
 def get_address_stats(address: str) -> dict | None:
     row = _conn().execute(
-        "SELECT * FROM addresses WHERE address = ?", (address,)
+        """SELECT
+               f.address,
+               a.first_seen, a.last_seen,
+               COUNT(*)                                                                      AS total_fills,
+               SUM(CASE WHEN f.usd_value >= ? AND f.outcome NOT IN ('push', '') AND f.outcome IS NOT NULL THEN 1 ELSE 0 END) AS resolved_fills,
+               SUM(CASE WHEN f.usd_value >= ? AND f.outcome = 'win'             THEN 1 ELSE 0 END) AS wins,
+               SUM(CASE WHEN f.usd_value >= ? AND f.pnl_usd IS NOT NULL         THEN f.pnl_usd ELSE 0 END) AS total_pnl_usd
+           FROM fills f
+           JOIN addresses a USING (address)
+           WHERE f.address = ?
+           GROUP BY f.address""",
+        (MIN_BET_USD, MIN_BET_USD, MIN_BET_USD, address),
     ).fetchone()
     if not row:
         return None
     d = dict(row)
-    if d["resolved_fills"] > 0:
-        d["win_rate"] = d["wins"] / d["resolved_fills"]
-    else:
-        d["win_rate"] = None
+    d["win_rate"] = (d["wins"] / d["resolved_fills"]) if d["resolved_fills"] else None
     return d
 
 
 def get_top_winners(limit: int = 10) -> list[dict]:
     rows = _conn().execute(
-        """SELECT *, CAST(wins AS REAL) / resolved_fills AS win_rate
-           FROM addresses
-           WHERE resolved_fills >= 3
+        """SELECT
+               address,
+               COUNT(*)                                                                                   AS total_fills,
+               SUM(CASE WHEN usd_value >= ? AND outcome NOT IN ('push','') AND outcome IS NOT NULL THEN 1 ELSE 0 END) AS resolved_fills,
+               SUM(CASE WHEN usd_value >= ? AND outcome = 'win'            THEN 1 ELSE 0 END) AS wins,
+               SUM(CASE WHEN usd_value >= ? AND pnl_usd IS NOT NULL        THEN pnl_usd ELSE 0 END) AS total_pnl_usd,
+               CAST(SUM(CASE WHEN usd_value >= ? AND outcome = 'win'            THEN 1 ELSE 0 END) AS REAL) /
+               NULLIF(SUM(CASE WHEN usd_value >= ? AND outcome NOT IN ('push','') AND outcome IS NOT NULL THEN 1 ELSE 0 END), 0) AS win_rate
+           FROM fills
+           GROUP BY address
+           HAVING resolved_fills >= 3
            ORDER BY win_rate DESC, total_pnl_usd DESC
            LIMIT ?""",
-        (limit,),
+        (MIN_BET_USD, MIN_BET_USD, MIN_BET_USD, MIN_BET_USD, MIN_BET_USD, limit),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_address_fills(address: str, limit: int = 200) -> list[dict]:
+    """Return all fills for an address, newest first."""
+    rows = _conn().execute(
+        """SELECT * FROM fills WHERE address = ? ORDER BY ts DESC LIMIT ?""",
+        (address, limit),
     ).fetchall()
     return [dict(r) for r in rows]

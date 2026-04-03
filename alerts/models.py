@@ -32,6 +32,21 @@ class WhaleAlert:
     def price_pct(self) -> float:
         return self.price_cents / 100
 
+    @property
+    def potential_payout(self) -> float:
+        """Total returned if whale is correct ($1 per share)."""
+        return self.quantity
+
+    @property
+    def potential_profit(self) -> float:
+        """Net profit if whale is correct (payout minus cost)."""
+        return self.quantity - self.usd_value
+
+    @property
+    def return_multiple(self) -> float:
+        """Return multiple on investment (e.g. 2.5× at 40¢)."""
+        return self.quantity / self.usd_value if self.usd_value else 0.0
+
     def win_rate_str(self) -> str:
         if self.whale_win_rate is None:
             return "unknown"
@@ -42,7 +57,7 @@ class WhaleAlert:
         lines = [
             f"[{self.source.upper()}] {self.market_title}",
             f"  Side: {self.side.upper()}  |  Price: {self.price_cents}¢  "
-            f"|  Qty: {self.quantity:,.0f}  |  Value: ${self.usd_value:,.0f}",
+            f"|  Spent: ${self.usd_value:,.0f}  |  Wins: ${self.potential_profit:,.0f} ({self.return_multiple:.2f}×)",
             f"  Keywords: {kw}",
             f"  Market ID: {self.market_id}",
         ]
