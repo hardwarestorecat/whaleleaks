@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>whaleleaks</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d1117; --surface: #161b22; --border: #30363d;
+    --text: #e6edf3; --muted: #8b949e;
+    --yes: #3fb950; --no: #f85149; --gold: #e3b341;
+    --blue: #58a6ff; --purple: #bc8cff;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+  header { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0; gap: 20px; }
+  header h1 { font-size: 17px; font-weight: 700; white-space: nowrap; }
+  header h1 span { color: var(--blue); }
+  #status-dot { width: 8px; height: 8px; border-radius: 50%; background: #444; display: inline-block; margin-right: 5px; }
+  #status-dot.live { background: var(--yes); box-shadow: 0 0 6px var(--yes); }
+  #status-text { color: var(--muted); font-size: 12px; }
+
+  .tabs { display: flex; gap: 2px; flex: 1; }
+  .tab { padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--muted); border: 1px solid transparent; white-space: nowrap; }
+  .tab:hover { color: var(--text); background: rgba(255,255,255,.05); }
+  .tab.active { color: var(--blue); border-color: var(--blue); background: rgba(88,166,255,.08); }
+  .tab .badge { background: var(--border); border-radius: 8px; padding: 0 5px; font-size: 10px; margin-left: 4px; }
+
+  .stats-bar { display: flex; gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .stat { flex: 1; padding: 8px 12px; background: var(--surface); text-align: center; }
+  .stat .val { font-size: 18px; font-weight: 700; color: var(--blue); }
+  .stat .lbl { font-size: 10px; color: var(--muted); margin-top: 1px; text-transform: uppercase; letter-spacing: .4px; }
+
+  .view { flex: 1; min-height: 0; display: none; }
+  .view.active { display: flex; }
+
+  #view-live { flex-direction: row; }
+  .panel { display: flex; flex-direction: column; border-right: 1px solid var(--border); min-height: 0; flex: 1; }
+  .panel:last-child { border-right: none; }
+  .panel.narrow { flex: 0 0 260px; }
+  .panel-header { padding: 8px 14px; border-bottom: 1px solid var(--border); background: var(--surface); font-weight: 600; font-size: 11px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+  .panel-header .badge { background: var(--border); border-radius: 8px; padding: 1px 6px; font-size: 10px; }
+  .panel-body { overflow-y: auto; flex: 1; }
+
+  /* ── Flash animation — bright pulse ── */
+  @keyframes newflash {
+    0%   { background: rgba(88,166,255,.35); box-shadow: inset 0 0 0 1px rgba(88,166,255,.6); }
+    40%  { background: rgba(88,166,255,.18); }
+    100% { background: transparent; box-shadow: none; }
+  }
+  .new { animation: newflash .9s ease forwards; }
+
+  /* Order flow */
+  .flow-row { padding: 7px 14px; border-bottom: 1px solid rgba(48,54,61,.5); display: flex; align-items: center; gap: 10px; font-size: 12px; transition: background .1s; }
+  .flow-row.whale-hl { background: rgba(227,179,65,.07); }
+  .flow-row.geo-hl { border-left: 2px solid var(--blue); }
+  .flow-row:hover { background: rgba(255,255,255,.03) !important; }
+
+  .flow-side { width: 54px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .flow-side-badge { width: 54px; text-align: center; border-radius: 4px; font-size: 10px; font-weight: 800; padding: 2px 3px; letter-spacing: .3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .flow-side-badge.yes     { background: rgba(63,185,80,.2);    color: var(--yes); }
+  .flow-side-badge.no      { background: rgba(248,81,73,.2);    color: var(--no); }
+  .flow-side-badge.outcome { background: rgba(188,140,255,.15); color: var(--purple); }
+  .flow-odds { font-size: 11px; font-weight: 700; font-family: monospace; }
+  .flow-odds.yes     { color: var(--yes); }
+  .flow-odds.no      { color: var(--no); }
+  .flow-odds.outcome { color: var(--purple); }
+
+  .flow-body { flex: 1; min-width: 0; }
+  .flow-market { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .flow-meta { color: var(--muted); font-size: 10px; margin-top: 1px; }
+  .flow-right { text-align: right; flex-shrink: 0; }
+  .flow-usd { font-weight: 600; font-size: 12px; }
+  .flow-usd.whale { color: var(--gold); }
+  .flow-usd.big   { color: var(--blue); }
+  .flow-ts { font-size: 10px; color: var(--border); margin-top: 1px; }
+  .whale-tag { font-size: 9px; background: rgba(227,179,65,.2); color: var(--gold); border-radius: 3px; padding: 1px 4px; font-weight: 700; flex-shrink: 0; }
+  .geo-tag  { font-size: 9px; background: rgba(88,166,255,.15); color: var(--blue); border-radius: 3px; padding: 1px 4px; font-weight: 700; flex-shrink: 0; }
+
+  /* Whale alerts */
+  .alert-item { padding: 10px 14px; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; align-items: start; }
+  .alert-item:hover { background: rgba(255,255,255,.02); }
+  .side-badge { width: 28px; height: 28px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; }
+  .side-badge.yes { background: rgba(63,185,80,.15); color: var(--yes); }
+  .side-badge.no  { background: rgba(248,81,73,.15); color: var(--no); }
+  .side-badge.unknown { background: rgba(139,148,158,.1); color: var(--muted); }
+  .alert-market { font-weight: 600; font-size: 12px; line-height: 1.3; }
+  .alert-meta { color: var(--muted); font-size: 10px; margin-top: 2px; }
+  .alert-whale { margin-top: 3px; font-size: 10px; display: flex; align-items: center; gap: 4px; }
+  .addr { font-family: monospace; color: var(--purple); }
+  .alert-right { text-align: right; }
+  .alert-usd { font-size: 13px; font-weight: 700; color: var(--gold); }
+  .alert-ts { font-size: 10px; color: var(--border); margin-top: 2px; }
+  .wr-pill { display: inline-flex; padding: 1px 4px; border-radius: 3px; font-size: 9px; font-weight: 700; }
+  .wr-pill.high { background: rgba(227,179,65,.15); color: var(--gold); }
+  .wr-pill.mid  { background: rgba(88,166,255,.12); color: var(--blue); }
+  .wr-pill.low  { background: rgba(139,148,158,.1);  color: var(--muted); }
+  .wr-pill.new  { background: rgba(188,140,255,.1);  color: var(--purple); }
+
+  /* Leaderboard */
+  .lb-row { padding: 9px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+  .lb-row:hover { background: rgba(255,255,255,.02); }
+  .lb-rank { width: 16px; text-align: center; color: var(--muted); font-size: 11px; flex-shrink: 0; }
+  .lb-rank.top { color: var(--gold); font-weight: 700; }
+  .lb-info { flex: 1; min-width: 0; }
+  .lb-addr { font-family: monospace; font-size: 11px; color: var(--purple); }
+  .lb-stats { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .lb-right { text-align: right; }
+  .lb-wr { font-size: 13px; font-weight: 700; }
+  .lb-pnl { font-size: 10px; margin-top: 1px; }
+  .pos { color: var(--yes); } .neg { color: var(--no); }
+
+  /* Markets tab */
+  #view-markets { flex-direction: column; overflow: hidden; }
+  .market-toolbar { padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .market-toolbar input { background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 5px 10px; font-size: 12px; width: 220px; outline: none; }
+  .market-toolbar input:focus { border-color: var(--blue); }
+  .filter-btn { padding: 4px 10px; border-radius: 5px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 11px; cursor: pointer; }
+  .filter-btn.on { background: rgba(88,166,255,.1); color: var(--blue); border-color: var(--blue); }
+  .mkt-updated { margin-left: auto; font-size: 10px; color: var(--border); }
+  .market-list { overflow-y: auto; flex: 1; }
+  .mkt-header-row { display: flex; align-items: center; gap: 12px; padding: 6px 16px; border-bottom: 1px solid var(--border); background: var(--surface); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; flex-shrink: 0; }
+  .mkt-col-geo   { width: 34px; flex-shrink: 0; }
+  .mkt-col-title { flex: 1; }
+  .mkt-col-vol   { min-width: 70px; text-align: right; flex-shrink: 0; }
+  .mkt-col-fill  { min-width: 180px; text-align: right; flex-shrink: 0; }
+  .market-row { padding: 8px 16px; border-bottom: 1px solid rgba(48,54,61,.4); display: flex; align-items: center; gap: 12px; }
+  .market-row:hover { background: rgba(255,255,255,.02); }
+  .market-row.new { animation: newflash .9s ease forwards; }
+  .mkt-title { flex: 1; font-size: 12px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mkt-vol { font-size: 11px; color: var(--muted); text-align: right; min-width: 70px; flex-shrink: 0; }
+  .mkt-fill { min-width: 180px; text-align: right; flex-shrink: 0; }
+  .fill-usd { font-size: 12px; font-weight: 600; }
+  .fill-usd.yes { color: var(--yes); } .fill-usd.no { color: var(--no); }
+  .fill-meta { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .fill-none { font-size: 10px; color: rgba(48,54,61,.8); }
+  .geo-badge { font-size: 9px; background: rgba(88,166,255,.15); color: var(--blue); border-radius: 3px; padding: 1px 5px; font-weight: 700; flex-shrink: 0; width: 34px; text-align: center; }
+  .geo-spacer { width: 34px; flex-shrink: 0; }
+
+  .empty { text-align: center; color: var(--muted); padding: 30px; font-size: 12px; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>whale<span>leaks</span></h1>
+  <div class="tabs">
+    <div class="tab" id="tab-live"    onclick="switchTab('live')">Live Feed</div>
+    <div class="tab" id="tab-markets" onclick="switchTab('markets')">Markets <span class="badge" id="market-tab-count">—</span></div>
+  </div>
+  <div><span id="status-dot"></span><span id="status-text">connecting…</span></div>
+</header>
+
+<div class="stats-bar">
+  <div class="stat"><div class="val" id="s-markets">—</div><div class="lbl">Tracked</div></div>
+  <div class="stat"><div class="val" id="s-geo">—</div><div class="lbl">Geopolitical</div></div>
+  <div class="stat"><div class="val" id="s-flow">0</div><div class="lbl">Flow Today</div></div>
+  <div class="stat"><div class="val" id="s-alerts">0</div><div class="lbl">Whale Alerts</div></div>
+  <div class="stat"><div class="val" id="s-addresses">—</div><div class="lbl">Addresses</div></div>
+  <div class="stat"><div class="val" id="s-uptime">—</div><div class="lbl">Uptime</div></div>
+</div>
+
+<!-- Live Feed Tab -->
+<div class="view" id="view-live">
+  <div class="panel">
+    <div class="panel-header">Order Flow ≥$500 <span class="badge" id="flow-count">0</span></div>
+    <div class="panel-body" id="flow-feed"><div class="empty">Waiting for orders…</div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header">Whale Alerts ≥$3k <span class="badge" id="whale-count">0</span></div>
+    <div class="panel-body" id="alert-feed"><div class="empty">No whales yet…</div></div>
+  </div>
+  <div class="panel narrow">
+    <div class="panel-header">Top Whales <span class="badge" id="lb-count">0</span></div>
+    <div class="panel-body" id="whale-list"><div class="empty">Not enough data</div></div>
+  </div>
+</div>
+
+<!-- Markets Tab -->
+<div class="view" id="view-markets">
+  <div class="market-toolbar">
+    <input type="text" id="mkt-search" placeholder="Search markets…" oninput="renderMarkets()">
+    <button class="filter-btn" id="btn-geo" onclick="toggleGeoFilter()">Geopolitical only</button>
+    <span style="color:var(--muted);font-size:11px" id="mkt-showing"></span>
+    <span class="mkt-updated" id="mkt-updated"></span>
+  </div>
+  <div class="mkt-header-row">
+    <div class="mkt-col-geo"></div>
+    <div class="mkt-col-title">Market</div>
+    <div class="mkt-col-vol">24h Vol</div>
+    <div class="mkt-col-fill">Largest Fill (this session)</div>
+  </div>
+  <div class="market-list" id="market-list"><div class="empty">Loading…</div></div>
+</div>
+
+<script>
+const fmt = {
+  usd:  v => '$' + Number(v).toLocaleString('en-US', {maximumFractionDigits:0}),
+  addr: a => a ? a.slice(0,6)+'…'+a.slice(-4) : '—',
+  ts:   s => new Date(s).toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),
+  vol:  v => v >= 1e6 ? '$'+(v/1e6).toFixed(1)+'M' : v >= 1e3 ? '$'+(v/1e3).toFixed(0)+'K' : '$'+Math.round(v),
+  ago:  s => { const d = Math.floor((Date.now()-new Date(s))/1000); return d < 60 ? d+'s ago' : Math.floor(d/60)+'m ago'; },
+};
+
+let flowCount = 0, whaleCount = 0;
+let allMarkets = [], geoOnly = false;
+const prevFills = {};   // condition_id -> last known top_fill usd for change detection
+
+// ── Tab persistence ──────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('view-' + name).classList.add('active');
+  localStorage.setItem('wl_tab', name);
+  if (name === 'markets') fetchMarkets();
+}
+
+(function restoreTab() {
+  const saved = localStorage.getItem('wl_tab') || 'live';
+  document.getElementById('tab-' + saved)?.classList.add('active');
+  document.getElementById('view-' + saved)?.classList.add('active');
+  if (saved === 'markets') setTimeout(fetchMarkets, 100);
+})();
+
+// ── Stats ────────────────────────────────────────────────────────────────────
+async function refreshStats() {
+  try {
+    const d = await fetch('/api/stats').then(r => r.json());
+    document.getElementById('s-markets').textContent  = d.markets_monitored;
+    document.getElementById('s-alerts').textContent   = d.alerts_today;
+    document.getElementById('s-addresses').textContent = d.total_addresses;
+    document.getElementById('s-uptime').textContent   = d.uptime;
+  } catch(e) {}
+}
+setInterval(refreshStats, 10000);
+refreshStats();
+
+// ── Markets ──────────────────────────────────────────────────────────────────
+async function fetchMarkets() {
+  try {
+    const data = await fetch('/api/markets').then(r => r.json());
+    const geoCount = data.filter(m => m.is_geopolitical).length;
+    document.getElementById('market-tab-count').textContent = data.length;
+    document.getElementById('s-markets').textContent  = data.length;
+    document.getElementById('s-geo').textContent      = geoCount;
+    document.getElementById('mkt-updated').textContent = 'Updated ' + fmt.ts(new Date().toISOString());
+
+    // Detect which markets have new top fills since last fetch
+    const newFillIds = new Set();
+    data.forEach(m => {
+      if (m.top_fill) {
+        const prev = prevFills[m.condition_id];
+        if (prev === undefined || m.top_fill.usd_value > prev) {
+          newFillIds.add(m.condition_id);
+          prevFills[m.condition_id] = m.top_fill.usd_value;
+        }
+      }
+    });
+
+    allMarkets = data;
+    renderMarkets(newFillIds);
+  } catch(e) {}
+}
+setInterval(fetchMarkets, 10000);
+
+function renderMarkets(newFillIds = new Set()) {
+  const q = document.getElementById('mkt-search').value.toLowerCase();
+  let list = allMarkets;
+  if (geoOnly) list = list.filter(m => m.is_geopolitical);
+  if (q) list = list.filter(m => m.title.toLowerCase().includes(q));
+  document.getElementById('mkt-showing').textContent = list.length + ' markets';
+
+  const el = document.getElementById('market-list');
+  if (!list.length) { el.innerHTML = '<div class="empty">No markets match</div>'; return; }
+
+  el.innerHTML = list.map(m => {
+    const f = m.top_fill;
+    const isNew = newFillIds.has(m.condition_id);
+    const fillHtml = f
+      ? `<div class="mkt-fill">
+           <div class="fill-usd ${f.side}">${fmt.usd(f.usd_value)} ${(f.side||'').toUpperCase()}</div>
+           <div class="fill-meta">${f.price_cents}¢ · ${fmt.addr(f.address)} · ${fmt.ts(f.ts)}</div>
+         </div>`
+      : `<div class="mkt-fill"><div class="fill-none">no fills yet</div></div>`;
+    return `<div class="market-row${isNew ? ' new' : ''}">
+      ${m.is_geopolitical ? '<span class="geo-badge">GEO</span>' : '<span class="geo-spacer"></span>'}
+      <div class="mkt-title" title="${m.title}">${m.title}</div>
+      <div class="mkt-vol">${fmt.vol(m.volume24hr)}</div>
+      ${fillHtml}
+    </div>`;
+  }).join('');
+}
+
+function toggleGeoFilter() {
+  geoOnly = !geoOnly;
+  document.getElementById('btn-geo').classList.toggle('on', geoOnly);
+  renderMarkets();
+}
+
+// ── Leaderboard ──────────────────────────────────────────────────────────────
+async function refreshWhales() {
+  try {
+    const data = await fetch('/api/whales').then(r => r.json());
+    const el = document.getElementById('whale-list');
+    document.getElementById('lb-count').textContent = data.length;
+    if (!data.length) return;
+    el.innerHTML = data.map((w, i) => {
+      const wr = w.win_rate != null ? Math.round(w.win_rate * 100) : null;
+      return `<div class="lb-row">
+        <div class="lb-rank ${i<3?'top':''}">${i+1}</div>
+        <div class="lb-info">
+          <div class="lb-addr">${fmt.addr(w.address)}</div>
+          <div class="lb-stats">${w.resolved_fills} resolved · ${w.total_fills} fills</div>
+        </div>
+        <div class="lb-right">
+          <div class="lb-wr ${wr>=65?'pos':wr<50&&wr!=null?'neg':''}">${wr!=null?wr+'%':'—'}</div>
+          <div class="lb-pnl ${w.total_pnl_usd>=0?'pos':'neg'}">${fmt.usd(w.total_pnl_usd)}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+setInterval(refreshWhales, 10000);
+refreshWhales();
+
+// ── History load ─────────────────────────────────────────────────────────────
+async function loadHistory() {
+  try {
+    const data = await fetch('/api/alerts?limit=100').then(r => r.json());
+    if (!data.length) return;
+    const feed = document.getElementById('alert-feed');
+    feed.innerHTML = '';
+    data.filter(r => r.usd_value >= 3000).forEach(row => {
+      feed.appendChild(buildAlertEl({
+        market_title: row.market_title, side: row.side,
+        price_cents: row.price_cents, usd_value: row.usd_value,
+        whale_address: row.address, win_rate_pct: row.win_rate_pct, ts: row.ts,
+      }));
+    });
+    whaleCount = feed.querySelectorAll('.alert-item').length;
+    document.getElementById('whale-count').textContent = whaleCount;
+  } catch(e) {}
+}
+loadHistory();
+
+// ── SSE ──────────────────────────────────────────────────────────────────────
+function connectSSE() {
+  const es = new EventSource('/api/stream');
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('status-text');
+  es.onopen  = () => { dot.classList.add('live');    txt.textContent = 'live'; };
+  es.onerror = () => { dot.classList.remove('live'); txt.textContent = 'reconnecting…'; };
+  es.onmessage = e => {
+    const msg = JSON.parse(e.data);
+    if (msg.event_type === 'flow')  addFlowRow(msg);
+    if (msg.event_type === 'whale') addWhaleAlert(msg);
+  };
+}
+connectSSE();
+
+// ── Flow row ─────────────────────────────────────────────────────────────────
+function addFlowRow(d) {
+  if (d.usd_value < 500) return;
+  const feed = document.getElementById('flow-feed');
+  feed.querySelector('.empty')?.remove();
+  const usdCls = d.is_whale ? 'whale' : d.usd_value >= 1500 ? 'big' : '';
+  const div = document.createElement('div');
+  const side = (d.side || '').toLowerCase();
+  const isBinary = side === 'yes' || side === 'no';
+  const sideCls  = isBinary ? side : 'outcome';
+  const sideLabel = isBinary ? side.toUpperCase() : (d.side || '?');
+  const oddsLabel = d.price_cents + '¢';
+  div.className = 'flow-row new' + (d.is_whale ? ' whale-hl' : '') + (d.is_geopolitical && !d.is_whale ? ' geo-hl' : '');
+  div.innerHTML = `
+    <div class="flow-side">
+      <div class="flow-side-badge ${sideCls}" title="${d.side}">${sideLabel}</div>
+      <div class="flow-odds ${sideCls}">${oddsLabel}</div>
+    </div>
+    <div class="flow-body">
+      <div class="flow-market">${d.market_title}</div>
+      <div class="flow-meta">${fmt.addr(d.address)}</div>
+    </div>
+    ${d.is_whale ? '<span class="whale-tag">WHALE</span>' : ''}
+    ${d.is_geopolitical && !d.is_whale ? '<span class="geo-tag">GEO</span>' : ''}
+    <div class="flow-right">
+      <div class="flow-usd ${usdCls}">${fmt.usd(d.usd_value)}</div>
+      <div class="flow-ts">${fmt.ts(d.ts)}</div>
+    </div>`;
+  feed.prepend(div);
+  flowCount++;
+  document.getElementById('flow-count').textContent = flowCount;
+  document.getElementById('s-flow').textContent = flowCount;
+  const rows = feed.querySelectorAll('.flow-row');
+  if (rows.length > 300) rows[rows.length-1].remove();
+}
+
+// ── Whale alert ───────────────────────────────────────────────────────────────
+function addWhaleAlert(a) {
+  const feed = document.getElementById('alert-feed');
+  feed.querySelector('.empty')?.remove();
+  feed.prepend(buildAlertEl(a, true));
+  whaleCount++;
+  document.getElementById('whale-count').textContent = whaleCount;
+  const items = feed.querySelectorAll('.alert-item');
+  if (items.length > 100) items[items.length-1].remove();
+  refreshWhales();
+}
+
+function buildAlertEl(a, isNew=false) {
+  const side = (a.side||'unknown').toLowerCase();
+  const wr = a.win_rate_pct ?? (a.whale_win_rate!=null ? Math.round(a.whale_win_rate*100) : null);
+  let pill = '';
+  if (a.whale_address) {
+    if (wr==null)  pill = `<span class="wr-pill new">new</span>`;
+    else if(wr>=65) pill = `<span class="wr-pill high">⭐${wr}%</span>`;
+    else if(wr>=50) pill = `<span class="wr-pill mid">${wr}%</span>`;
+    else            pill = `<span class="wr-pill low">${wr}%</span>`;
+  }
+  const div = document.createElement('div');
+  div.className = 'alert-item' + (isNew ? ' new' : '');
+  div.innerHTML = `
+    <div class="side-badge ${side}">${side==='yes'?'YES':side==='no'?'NO':'?'}</div>
+    <div>
+      <div class="alert-market">${a.market_title||a.market_id}</div>
+      <div class="alert-meta">${a.price_cents}¢ / share</div>
+      ${a.whale_address?`<div class="alert-whale"><span class="addr">${fmt.addr(a.whale_address)}</span>${pill}</div>`:''}
+    </div>
+    <div class="alert-right">
+      <div class="alert-usd">${fmt.usd(a.usd_value)}</div>
+      <div class="alert-ts">${fmt.ts(a.ts||new Date().toISOString())}</div>
+    </div>`;
+  return div;
+}
+</script>
+</body>
+</html>
