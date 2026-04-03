@@ -8,6 +8,8 @@ def _kw_list(raw: str) -> list[str]:
     return [w.strip().lower() for w in raw.split(",") if w.strip()]
 
 
+REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379")
+
 WHALE_THRESHOLD_USD: float = float(os.getenv("WHALE_THRESHOLD_USD", "3000"))
 MARKET_LIMIT: int = int(os.getenv("MARKET_LIMIT", "500"))  # top N markets by 24h volume
 FLOW_THRESHOLD_USD: float = float(os.getenv("FLOW_THRESHOLD_USD", "1000"))

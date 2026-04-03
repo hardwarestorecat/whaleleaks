@@ -24,6 +24,7 @@ from alerts.models import WhaleAlert
 from polymarket.listener import run as poly_run
 from polymarket.resolver import run as resolver_run
 from polymarket.market_cache import get_markets
+from store import flow_store
 
 logging.basicConfig(
     level=logging.INFO,
@@ -39,13 +40,14 @@ def _check_config() -> None:
 
 
 async def _on_flow(flow: dict) -> None:
-    """Callback: push all ≥$1k orders to dashboard flow panel."""
+    """Callback: push all ≥$50 orders to dashboard and Redis."""
     broadcast_flow(flow)
+    await flow_store.push_flow(flow)
 
 
 async def _on_whale(alert: WhaleAlert) -> None:
-    """Callback: push whale alerts to SSE dashboard subscribers."""
-    broadcast({
+    """Callback: push whale alerts to SSE dashboard and Redis."""
+    d = {
         "source": alert.source,
         "market_title": alert.market_title,
         "market_id": alert.market_id,
@@ -57,7 +59,9 @@ async def _on_whale(alert: WhaleAlert) -> None:
         "whale_resolved_bets": alert.whale_resolved_bets,
         "whale_total_pnl": alert.whale_total_pnl,
         "ts": alert.ts.isoformat(),
-    })
+    }
+    broadcast(d)
+    await flow_store.push_whale(d)
 
 
 async def _update_market_count() -> None:

@@ -119,6 +119,18 @@ async def tracked_markets():
     ]
 
 
+@app.get("/api/flow")
+async def recent_flow(limit: int = 500):
+    from store import flow_store
+    return await flow_store.get_recent_flow(limit)
+
+
+@app.get("/api/whale-history")
+async def recent_whale_history(limit: int = 200):
+    from store import flow_store
+    return await flow_store.get_recent_whales(limit)
+
+
 @app.get("/api/stream")
 async def sse_stream():
     """Server-Sent Events — pushes new whale alerts to the browser live."""

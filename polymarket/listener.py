@@ -136,8 +136,8 @@ async def _handle(trade: dict, on_whale: WhaleCB | None, on_flow: FlowCB | None)
             "is_geopolitical": geo,
         })
 
-    # Discord whale alert — must meet threshold AND be geopolitical
-    if usd_value < config.WHALE_THRESHOLD_USD or not geo:
+    # Whale alert — any trade >= threshold
+    if usd_value < config.WHALE_THRESHOLD_USD:
         return
 
     alert = WhaleAlert(
@@ -161,6 +161,9 @@ async def _handle(trade: dict, on_whale: WhaleCB | None, on_flow: FlowCB | None)
             alert.whale_resolved_bets = stats["resolved_fills"]
             alert.whale_total_pnl   = stats["total_pnl_usd"]
 
-    await dispatch(alert)
+    # Discord only for geopolitical markets
+    if geo:
+        await dispatch(alert)
+
     if on_whale:
         await on_whale(alert)

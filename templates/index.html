@@ -328,22 +328,57 @@ async function refreshWhales() {
 setInterval(refreshWhales, 10000);
 refreshWhales();
 
-// ── History load ─────────────────────────────────────────────────────────────
+// ── History load (from Redis) ─────────────────────────────────────────────────
 async function loadHistory() {
+  // Flow history
   try {
-    const data = await fetch('/api/alerts?limit=100').then(r => r.json());
-    if (!data.length) return;
-    const feed = document.getElementById('alert-feed');
-    feed.innerHTML = '';
-    data.filter(r => r.usd_value >= 3000).forEach(row => {
-      feed.appendChild(buildAlertEl({
-        market_title: row.market_title, side: row.side,
-        price_cents: row.price_cents, usd_value: row.usd_value,
-        whale_address: row.address, win_rate_pct: row.win_rate_pct, ts: row.ts,
-      }));
-    });
-    whaleCount = feed.querySelectorAll('.alert-item').length;
-    document.getElementById('whale-count').textContent = whaleCount;
+    const data = await fetch('/api/flow?limit=500').then(r => r.json());
+    if (data.length) {
+      const feed = document.getElementById('flow-feed');
+      feed.innerHTML = '';
+      // Already newest-first from Redis ZREVRANGE
+      data.forEach(row => {
+        if (row.usd_value < 500) return;
+        const usdCls = row.is_whale ? 'whale' : row.usd_value >= 1500 ? 'big' : '';
+        const side = (row.side || '').toLowerCase();
+        const isBinary = side === 'yes' || side === 'no';
+        const sideCls  = isBinary ? side : 'outcome';
+        const sideLabel = isBinary ? side.toUpperCase() : (row.side || '?');
+        const div = document.createElement('div');
+        div.className = 'flow-row' + (row.is_whale ? ' whale-hl' : '') + (row.is_geopolitical && !row.is_whale ? ' geo-hl' : '');
+        div.innerHTML = `
+          <div class="flow-side">
+            <div class="flow-side-badge ${sideCls}" title="${row.side}">${sideLabel}</div>
+            <div class="flow-odds ${sideCls}">${row.price_cents}¢</div>
+          </div>
+          <div class="flow-body">
+            <div class="flow-market">${row.market_title}</div>
+            <div class="flow-meta">${fmt.addr(row.address)}</div>
+          </div>
+          ${row.is_whale ? '<span class="whale-tag">WHALE</span>' : ''}
+          ${row.is_geopolitical && !row.is_whale ? '<span class="geo-tag">GEO</span>' : ''}
+          <div class="flow-right">
+            <div class="flow-usd ${usdCls}">${fmt.usd(row.usd_value)}</div>
+            <div class="flow-ts">${fmt.ts(row.ts)}</div>
+          </div>`;
+        feed.appendChild(div);
+        flowCount++;
+      });
+      document.getElementById('flow-count').textContent = flowCount;
+      document.getElementById('s-flow').textContent = flowCount;
+    }
+  } catch(e) {}
+
+  // Whale alert history
+  try {
+    const data = await fetch('/api/whale-history?limit=200').then(r => r.json());
+    if (data.length) {
+      const feed = document.getElementById('alert-feed');
+      feed.innerHTML = '';
+      data.forEach(a => feed.appendChild(buildAlertEl(a, false)));
+      whaleCount = feed.querySelectorAll('.alert-item').length;
+      document.getElementById('whale-count').textContent = whaleCount;
+    }
   } catch(e) {}
 }
 loadHistory();
