@@ -120,15 +120,15 @@ async def tracked_markets():
 
 
 @app.get("/api/flow")
-async def recent_flow(limit: int = 500):
+def recent_flow(limit: int = 500):
     from store import flow_store
-    return await flow_store.get_recent_flow(limit)
+    return flow_store.get_recent_flow(limit)
 
 
 @app.get("/api/whale-history")
-async def recent_whale_history(limit: int = 200):
+def recent_whale_history(limit: int = 200):
     from store import flow_store
-    return await flow_store.get_recent_whales(limit)
+    return flow_store.get_recent_whales(limit)
 
 
 @app.get("/api/stream")
