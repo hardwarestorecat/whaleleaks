@@ -106,6 +106,16 @@ async def _handle(trade: dict, on_whale: WhaleCB | None, on_flow: FlowCB | None)
     quantity     = size
     geo          = is_geopolitical(title)
 
+    # ── Dedup: skip entirely if we've seen this tx before ────────────────────
+    if usd_value >= config.FLOW_THRESHOLD_USD:
+        fingerprint = f"{maker}:{usd_value:.2f}:{ts_raw}"
+        key = tx_hash if tx_hash else fingerprint
+        if await flow_store.is_whale_seen(key) or (tx_hash and await flow_store.is_whale_seen(fingerprint)):
+            return
+        await flow_store.mark_whale_seen(fingerprint)
+        if tx_hash:
+            await flow_store.mark_whale_seen(tx_hash)
+
     # Persist for win-rate tracking (only bets >= $500 count toward leaderboard)
     if usd_value >= 500 and maker:
         db.save_fill(
@@ -145,13 +155,6 @@ async def _handle(trade: dict, on_whale: WhaleCB | None, on_flow: FlowCB | None)
     if usd_value < config.WHALE_THRESHOLD_USD:
         return
 
-    # Dedup by tx_hash (cross-restart) and composite fingerprint (same-session dupes)
-    fingerprint = f"{maker}:{usd_value:.2f}:{ts_raw}"
-    if await flow_store.is_whale_seen(tx_hash) or await flow_store.is_whale_seen(fingerprint):
-        return
-
-    await flow_store.mark_whale_seen(fingerprint)
-
     alert = WhaleAlert(
         source="polymarket",
         market_title=title,
@@ -172,8 +175,6 @@ async def _handle(trade: dict, on_whale: WhaleCB | None, on_flow: FlowCB | None)
             alert.whale_win_rate    = stats["win_rate"]
             alert.whale_resolved_bets = stats["resolved_fills"]
             alert.whale_total_pnl   = stats["total_pnl_usd"]
-
-    await flow_store.mark_whale_seen(tx_hash)
 
     await dispatch(alert)
 

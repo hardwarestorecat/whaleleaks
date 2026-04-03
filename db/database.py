@@ -73,6 +73,7 @@ def init() -> None:
         CREATE INDEX IF NOT EXISTS idx_fills_address      ON fills(address);
         CREATE INDEX IF NOT EXISTS idx_fills_condition    ON fills(condition_id);
         CREATE INDEX IF NOT EXISTS idx_fills_unresolved   ON fills(condition_id) WHERE outcome IS NULL;
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_fills_tx    ON fills(tx_hash) WHERE tx_hash != '';
 
         CREATE TABLE IF NOT EXISTS market_outcomes (
             condition_id    TEXT PRIMARY KEY,
@@ -101,13 +102,15 @@ def save_fill(
 ) -> int:
     with tx() as conn:
         cur = conn.execute(
-            """INSERT INTO fills
+            """INSERT OR IGNORE INTO fills
                (tx_hash, block_number, address, role, condition_id, market_title,
                 side, price_cents, quantity, usd_value, ts)
                VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
             (tx_hash, block_number, address, role, condition_id, market_title,
              side, price_cents, quantity, usd_value, ts),
         )
+        if cur.rowcount == 0:
+            return 0  # duplicate — nothing inserted
         fill_id = cur.lastrowid
 
         conn.execute(
