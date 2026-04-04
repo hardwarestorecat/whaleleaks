@@ -281,6 +281,17 @@ const fmt = {
   pnl:  v => v == null ? '—' : (v >= 0 ? '+' : '') + '$' + Math.abs(v).toLocaleString('en-US', {maximumFractionDigits:0}),
 };
 
+// ── Client-side category detection (mirrors Python utils/market_filter.py) ────
+const _SPORTS_KW = ['vs.', ' vs ', 'match', ' game ', 'score', 'win on ', 'nfl', 'nba', 'nhl', 'mlb', 'mls', 'ufc', 'pga', 'fifa', 'world cup', 'champions league', 'premier league', 'la liga', 'bundesliga', 'serie a', 'ligue 1', 'copa', 'super bowl', 'playoffs', 'soccer', 'basketball', 'baseball', 'hockey', 'tennis', 'golf', 'cricket', 'rugby', 'boxing', ' mma', 'formula 1', 'grand prix', 'fc ', ' fc', 'wildcats', 'bulldogs', 'eagles', 'patriots', 'cowboys', 'lakers', 'celtics', 'yankees'];
+const _GEO_KW = ['war', 'conflict', 'battle', 'attack', 'invasion', 'ceasefire', 'military', 'airstrike', 'missile', 'nuclear', 'nato', 'president', 'prime minister', 'election', 'vote', 'coup', 'assassination', 'congress', 'senate', 'sanction', 'treaty', 'summit', 'diplomat', 'united nations', 'embargo', 'ukraine', 'russia', 'china', 'taiwan', 'iran', 'israel', 'gaza', 'north korea', 'tariff', 'trade war', 'federal reserve', 'fed rate', 'revolution', 'uprising', 'civil war', 'terrorist', 'cyberattack'];
+function isSports(t) { t = (t||'').toLowerCase(); return _SPORTS_KW.some(k => t.includes(k)); }
+function isGeo(t)    { t = (t||'').toLowerCase(); return _GEO_KW.some(k => t.includes(k)); }
+function tagRow(el, d) {
+  el.dataset.whale  = d.is_whale                                    ? '1' : '0';
+  el.dataset.geo    = (d.is_geopolitical ?? isGeo(d.market_title))  ? '1' : '0';
+  el.dataset.sports = (d.is_sports       ?? isSports(d.market_title))? '1' : '0';
+}
+
 let flowCount = 0, whaleCount = 0;
 let allMarkets = [], mktCat = 'all';
 let flowFilter = 'all';   // 'all' | 'geo' | 'whale' | 'sports'
@@ -494,9 +505,7 @@ async function loadHistory() {
         const rProfit = row.potential_profit != null ? fmt.usd(row.potential_profit) : null;
         const rMult   = row.return_multiple  != null ? row.return_multiple.toFixed(2) + '×' : null;
         div.className = 'flow-row' + (row.is_whale ? ' whale-hl' : '') + (row.is_geopolitical && !row.is_whale ? ' geo-hl' : '');
-        div.dataset.whale  = row.is_whale        ? '1' : '0';
-        div.dataset.geo    = row.is_geopolitical ? '1' : '0';
-        div.dataset.sports = row.is_sports       ? '1' : '0';
+        tagRow(div, row);
         div.innerHTML = `
           <div class="flow-side">
             <div class="flow-side-badge ${sideCls}" title="${row.side}">${sideLabel}</div>
@@ -619,15 +628,7 @@ function addFlowRow(d) {
   const profit = d.potential_profit != null ? fmt.usd(d.potential_profit) : null;
   const mult   = d.return_multiple  != null ? d.return_multiple.toFixed(2) + '×' : null;
   div.className = 'flow-row new' + (d.is_whale ? ' whale-hl' : '') + (d.is_geopolitical && !d.is_whale ? ' geo-hl' : '');
-  div.dataset.whale  = d.is_whale        ? '1' : '0';
-  div.dataset.geo    = d.is_geopolitical ? '1' : '0';
-  div.dataset.sports = d.is_sports       ? '1' : '0';
-  if (flowFilter !== 'all') {
-    const show = (flowFilter === 'geo' && d.is_geopolitical)
-              || (flowFilter === 'whale' && d.is_whale)
-              || (flowFilter === 'sports' && d.is_sports);
-    if (!show) div.style.display = 'none';
-  }
+  tagRow(div, d);
   div.innerHTML = `
     <div class="flow-side">
       <div class="flow-side-badge ${sideCls}" title="${d.side}">${sideLabel}</div>
@@ -678,9 +679,7 @@ function buildAlertEl(a, isNew=false) {
   }
   const div = document.createElement('div');
   div.className = 'alert-item' + (isNew ? ' new' : '');
-  div.dataset.whale  = '1';
-  div.dataset.geo    = a.is_geopolitical ? '1' : '0';
-  div.dataset.sports = a.is_sports       ? '1' : '0';
+  tagRow(div, {...a, is_whale: true, market_title: a.market_title || a.market_id});
   const profit = a.potential_profit != null ? fmt.usd(a.potential_profit) : null;
   const mult   = a.return_multiple  != null ? a.return_multiple.toFixed(2) + '×' : null;
   div.innerHTML = `
