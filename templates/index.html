@@ -250,7 +250,10 @@
 <div class="view" id="view-markets">
   <div class="market-toolbar">
     <input type="text" id="mkt-search" placeholder="Search markets…" oninput="renderMarkets()">
-    <button class="filter-btn" id="btn-geo" onclick="toggleGeoFilter()">Geopolitical only</button>
+    <button class="filter-btn on" id="mkt-cat-all"    onclick="setMktCat('all')">All</button>
+    <button class="filter-btn"     id="mkt-cat-geo"    onclick="setMktCat('geo')">Geo</button>
+    <button class="filter-btn"     id="mkt-cat-sports" onclick="setMktCat('sports')">Sports</button>
+    <button class="filter-btn"     id="mkt-cat-other"  onclick="setMktCat('other')">Other</button>
     <span style="color:var(--muted);font-size:11px" id="mkt-showing"></span>
     <span class="mkt-updated" id="mkt-updated"></span>
   </div>
@@ -277,7 +280,7 @@ const fmt = {
 };
 
 let flowCount = 0, whaleCount = 0;
-let allMarkets = [], geoOnly = false;
+let allMarkets = [], mktCat = 'all';
 let flowFilter = 'all';   // 'all' | 'geo' | 'whale' | 'sports'
 let mktSort = 'latest', mktSortDir = -1;  // dir: -1 desc, 1 asc
 const prevFills = {};   // condition_id -> last known top_fill usd for change detection
@@ -297,6 +300,11 @@ function switchTab(name) {
   document.getElementById('tab-' + saved)?.classList.add('active');
   document.getElementById('view-' + saved)?.classList.add('active');
   if (saved === 'markets') setTimeout(fetchMarkets, 100);
+  // init default sort arrow
+  const arrow = document.getElementById('sort-arrow-latest');
+  const col   = document.getElementById('sort-col-latest');
+  if (arrow) arrow.textContent = '↓';
+  if (col)   col.classList.add('sort-active');
 })();
 
 // ── Stats ────────────────────────────────────────────────────────────────────
@@ -343,7 +351,9 @@ setInterval(fetchMarkets, 10000);
 function renderMarkets(newFillIds = new Set()) {
   const q = document.getElementById('mkt-search').value.toLowerCase();
   let list = [...allMarkets];
-  if (geoOnly) list = list.filter(m => m.is_geopolitical);
+  if (mktCat === 'geo')    list = list.filter(m => m.is_geopolitical);
+  else if (mktCat === 'sports') list = list.filter(m => m.is_sports);
+  else if (mktCat === 'other')  list = list.filter(m => !m.is_geopolitical && !m.is_sports);
   if (q) list = list.filter(m => m.title.toLowerCase().includes(q));
 
   // Sort
@@ -389,9 +399,12 @@ function renderMarkets(newFillIds = new Set()) {
   }).join('');
 }
 
-function toggleGeoFilter() {
-  geoOnly = !geoOnly;
-  document.getElementById('btn-geo').classList.toggle('on', geoOnly);
+// ── Markets category filter ───────────────────────────────────────────────────
+function setMktCat(cat) {
+  mktCat = cat;
+  ['all','geo','sports','other'].forEach(k => {
+    document.getElementById('mkt-cat-' + k)?.classList.toggle('on', k === cat);
+  });
   renderMarkets();
 }
 
@@ -399,14 +412,17 @@ function toggleGeoFilter() {
 function setFlowFilter(f) {
   flowFilter = f;
   ['all','geo','whale','sports'].forEach(k => {
-    const btn = document.getElementById('ff-' + k);
-    btn.classList.toggle('on', k === f);
+    document.getElementById('ff-' + k)?.classList.toggle('on', k === f);
   });
-  document.querySelectorAll('.flow-row').forEach(row => {
-    const show = f === 'all'
-      || (f === 'geo'    && row.dataset.geo    === '1')
-      || (f === 'whale'  && row.dataset.whale  === '1')
-      || (f === 'sports' && row.dataset.sports === '1');
+  applyFlowFilter();
+}
+
+function applyFlowFilter() {
+  document.querySelectorAll('#flow-feed .flow-row').forEach(row => {
+    const show = flowFilter === 'all'
+      || (flowFilter === 'geo'    && row.dataset.geo    === '1')
+      || (flowFilter === 'whale'  && row.dataset.whale  === '1')
+      || (flowFilter === 'sports' && row.dataset.sports === '1');
     row.style.display = show ? '' : 'none';
   });
 }
@@ -623,6 +639,7 @@ function addFlowRow(d) {
       <div class="flow-ts">${fmt.ts(d.ts)}</div>
     </div>`;
   feed.prepend(div);
+  if (flowFilter !== 'all') applyFlowFilter();
   flowCount++;
   document.getElementById('flow-count').textContent = flowCount;
   document.getElementById('s-flow').textContent = flowCount;

@@ -10,7 +10,7 @@ import time
 import aiohttp
 
 import config
-from utils.market_filter import is_geopolitical
+from utils.market_filter import is_geopolitical, is_sports
 
 log = logging.getLogger("polymarket.market_cache")
 
@@ -55,6 +55,7 @@ async def get_markets() -> list[dict]:
             "title": question,
             "slug": m.get("slug", ""),
             "is_geopolitical": is_geopolitical(question),
+            "is_sports": is_sports(question),
             "volume24hr": m.get("volume24hr", 0),
             "token_ids": [str(i) for i in raw_ids],
         })
