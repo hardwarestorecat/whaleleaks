@@ -1,0 +1,19 @@
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Pull latest code
+        run: |
+          cd ~/whaleleaks
+          git pull origin master
+
+      - name: Rebuild and restart
+        run: |
+          cd ~/whaleleaks
+          docker compose up -d --build
