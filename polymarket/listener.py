@@ -137,6 +137,7 @@ async def _handle(trade: dict, on_whale: WhaleCB | None, on_flow: FlowCB | None)
         price_frac = price_cents / 100
         pot_payout = round(usd_value / price_frac, 2) if price_frac else 0
         await on_flow({
+            "tx_hash": tx_hash,
             "market_title": title,
             "market_id": slug or condition_id,
             "side": side,

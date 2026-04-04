@@ -16,11 +16,19 @@ import redis as redis_sync
 
 log = logging.getLogger("store.flow")
 
-FLOW_KEY         = "whaleleaks:flow"
+FLOW_KEY         = "whaleleaks:flow"        # ZSET: member=fingerprint, score=ts
+FLOW_DATA_KEY    = "whaleleaks:flow_data"   # HASH: fingerprint → json
 WHALE_KEY        = "whaleleaks:whales"
+WHALE_DATA_KEY   = "whaleleaks:whale_data"
 MARKET_HIGH_KEY  = "whaleleaks:market_high"
 TTL              = 30 * 24 * 3600   # 30 days in seconds
 WEEK             = 7  * 24 * 3600   # 7 days in seconds
+
+
+def _flow_key(d: dict) -> str:
+    """Stable dedup key for a flow/whale entry."""
+    return (d.get("tx_hash") or
+            f"{d.get('address','')}:{d.get('usd_value',0):.2f}:{d.get('ts','')}")
 
 
 def _url() -> str:
@@ -33,8 +41,12 @@ async def push_flow(flow: dict) -> None:
     try:
         r = aioredis.from_url(_url(), decode_responses=True)
         ts = time.time()
+        fk = _flow_key(flow)
         async with r:
-            await r.zadd(FLOW_KEY, {json.dumps(flow): ts})
+            added = await r.zadd(FLOW_KEY, {fk: ts}, nx=True)
+            if added:
+                await r.hset(FLOW_DATA_KEY, fk, json.dumps(flow))
+                await r.expire(FLOW_DATA_KEY, TTL)
             await r.zremrangebyscore(FLOW_KEY, 0, ts - TTL)
     except Exception as exc:
         log.debug("Redis flow push: %s", exc)
@@ -44,8 +56,12 @@ async def push_whale(alert: dict) -> None:
     try:
         r = aioredis.from_url(_url(), decode_responses=True)
         ts = time.time()
+        fk = _flow_key(alert)
         async with r:
-            await r.zadd(WHALE_KEY, {json.dumps(alert): ts})
+            added = await r.zadd(WHALE_KEY, {fk: ts}, nx=True)
+            if added:
+                await r.hset(WHALE_DATA_KEY, fk, json.dumps(alert))
+                await r.expire(WHALE_DATA_KEY, TTL)
             await r.zremrangebyscore(WHALE_KEY, 0, ts - TTL)
     except Exception as exc:
         log.debug("Redis whale push: %s", exc)
@@ -110,8 +126,11 @@ async def set_market_high(condition_id: str, fill: dict) -> None:
 def get_recent_flow(limit: int = 500) -> list[dict]:
     try:
         r = redis_sync.from_url(_url(), decode_responses=True, socket_connect_timeout=2)
-        items = r.zrevrange(FLOW_KEY, 0, limit - 1)
-        return [json.loads(i) for i in items]
+        keys = r.zrevrange(FLOW_KEY, 0, limit - 1)
+        if not keys:
+            return []
+        values = r.hmget(FLOW_DATA_KEY, keys)
+        return [json.loads(v) for v in values if v]
     except Exception as exc:
         log.debug("Redis flow fetch: %s", exc)
         return []
@@ -139,8 +158,11 @@ def get_all_market_highs() -> dict[str, dict]:
 def get_recent_whales(limit: int = 200) -> list[dict]:
     try:
         r = redis_sync.from_url(_url(), decode_responses=True, socket_connect_timeout=2)
-        items = r.zrevrange(WHALE_KEY, 0, limit - 1)
-        return [json.loads(i) for i in items]
+        keys = r.zrevrange(WHALE_KEY, 0, limit - 1)
+        if not keys:
+            return []
+        values = r.hmget(WHALE_DATA_KEY, keys)
+        return [json.loads(v) for v in values if v]
     except Exception as exc:
         log.debug("Redis whale fetch: %s", exc)
         return []
