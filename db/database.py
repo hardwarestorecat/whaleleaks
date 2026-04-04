@@ -8,12 +8,13 @@ fills           — every individual whale fill
 market_outcomes — resolved market cache (avoids redundant API calls)
 """
 from __future__ import annotations
+import os
 import sqlite3
 import threading
 from contextlib import contextmanager
 from pathlib import Path
 
-DB_PATH = Path("whaleleaks.db")
+DB_PATH = Path(os.getenv("DB_PATH", "whaleleaks.db"))
 MIN_BET_USD = 500.0   # only count bets >= this for win-rate / leaderboard
 
 _local = threading.local()

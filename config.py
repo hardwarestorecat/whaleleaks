@@ -66,14 +66,6 @@ EMAIL_PASSWORD: str = os.getenv("EMAIL_PASSWORD", "")
 EMAIL_FROM: str = os.getenv("EMAIL_FROM", EMAIL_USERNAME)
 EMAIL_TO: list[str] = _kw_list(os.getenv("EMAIL_TO", ""))
 
-# Web Push
-PUSH_ENABLED: bool = os.getenv("PUSH_ENABLED", "false").lower() == "true"
-PUSH_VAPID_PRIVATE_KEY: str = os.getenv("PUSH_VAPID_PRIVATE_KEY", "")
-PUSH_VAPID_CLAIMS_SUB: str = os.getenv("PUSH_VAPID_CLAIMS_SUB", "mailto:you@example.com")
-PUSH_SUBSCRIPTION_ENDPOINT: str = os.getenv("PUSH_SUBSCRIPTION_ENDPOINT", "")
-PUSH_SUBSCRIPTION_P256DH: str = os.getenv("PUSH_SUBSCRIPTION_P256DH", "")
-PUSH_SUBSCRIPTION_AUTH: str = os.getenv("PUSH_SUBSCRIPTION_AUTH", "")
-
 # Polygon
 POLYGON_RPC_URL: str = os.getenv("POLYGON_RPC_URL", "https://polygon-rpc.com")
 

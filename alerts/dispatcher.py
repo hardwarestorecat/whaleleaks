@@ -135,40 +135,6 @@ async def _send_email(alert: WhaleAlert) -> None:
     await asyncio.get_event_loop().run_in_executor(None, _send_email_sync, alert)
 
 
-# ─── Web Push ─────────────────────────────────────────────────────────────────
-
-def _send_push_sync(alert: WhaleAlert) -> None:
-    if not config.PUSH_ENABLED or not config.PUSH_SUBSCRIPTION_ENDPOINT:
-        return
-    try:
-        from pywebpush import webpush
-        import json
-        subscription_info = {
-            "endpoint": config.PUSH_SUBSCRIPTION_ENDPOINT,
-            "keys": {
-                "p256dh": config.PUSH_SUBSCRIPTION_P256DH,
-                "auth": config.PUSH_SUBSCRIPTION_AUTH,
-            },
-        }
-        data = json.dumps({
-            "title": f"Whale: ${alert.usd_value:,.0f} on {alert.source.upper()}",
-            "body": f"{alert.market_title[:80]}\n{alert.side.upper()} @ {alert.price_cents}¢",
-        })
-        webpush(
-            subscription_info=subscription_info,
-            data=data,
-            vapid_private_key=config.PUSH_VAPID_PRIVATE_KEY,
-            vapid_claims={"sub": config.PUSH_VAPID_CLAIMS_SUB},
-        )
-        log.info("Push notification sent for %s", alert.market_id)
-    except Exception as exc:
-        log.error("Push send failed: %s", exc)
-
-
-async def _send_push(alert: WhaleAlert) -> None:
-    await asyncio.get_event_loop().run_in_executor(None, _send_push_sync, alert)
-
-
 # ─── Public dispatcher ────────────────────────────────────────────────────────
 
 async def dispatch(alert: WhaleAlert) -> None:
@@ -177,6 +143,5 @@ async def dispatch(alert: WhaleAlert) -> None:
     await asyncio.gather(
         _send_discord(alert),
         _send_email(alert),
-        _send_push(alert),
         return_exceptions=True,
     )

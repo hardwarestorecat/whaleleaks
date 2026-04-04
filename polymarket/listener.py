@@ -19,7 +19,7 @@ from alerts.models import WhaleAlert
 from alerts.dispatcher import dispatch
 from db import database as db
 from store import flow_store
-from utils.market_filter import is_geopolitical, matched_keywords
+from utils.market_filter import is_geopolitical, is_sports, matched_keywords
 
 log = logging.getLogger("polymarket.listener")
 
@@ -105,6 +105,7 @@ async def _handle(trade: dict, on_whale: WhaleCB | None, on_flow: FlowCB | None)
     ts           = ts_dt.isoformat()
     quantity     = size
     geo          = is_geopolitical(title)
+    sports       = is_sports(title)
 
     # ── Dedup: skip entirely if we've seen this tx before ────────────────────
     if usd_value >= config.FLOW_THRESHOLD_USD:
@@ -177,7 +178,8 @@ async def _handle(trade: dict, on_whale: WhaleCB | None, on_flow: FlowCB | None)
             alert.whale_resolved_bets = stats["resolved_fills"]
             alert.whale_total_pnl   = stats["total_pnl_usd"]
 
-    await dispatch(alert)
+    if not sports:
+        await dispatch(alert)
 
     if on_whale:
         await on_whale(alert)
