@@ -204,10 +204,9 @@
 <!-- Live Feed Tab -->
 <div class="view" id="view-live" style="flex-direction:column">
   <div class="feed-filters">
-    <button class="feed-filter-btn on" id="ff-all"    onclick="setFlowFilter('all')">ALL</button>
-    <button class="feed-filter-btn geo"    id="ff-geo"    onclick="setFlowFilter('geo')">GEO</button>
-    <button class="feed-filter-btn whale"  id="ff-whale"  onclick="setFlowFilter('whale')">WHALE</button>
-    <button class="feed-filter-btn sports" id="ff-sports" onclick="setFlowFilter('sports')">SPORTS</button>
+    <button class="feed-filter-btn geo on"    id="ff-geo"    onclick="toggleFlowExclude('geo')">GEO</button>
+    <button class="feed-filter-btn whale on"  id="ff-whale"  onclick="toggleFlowExclude('whale')">WHALE</button>
+    <button class="feed-filter-btn sports on" id="ff-sports" onclick="toggleFlowExclude('sports')">SPORTS</button>
   </div>
   <div style="display:flex;flex:1;min-height:0">
   <div class="panel">
@@ -252,10 +251,9 @@
 <div class="view" id="view-markets">
   <div class="market-toolbar">
     <input type="text" id="mkt-search" placeholder="Search markets…" oninput="renderMarkets()">
-    <button class="filter-btn on" id="mkt-cat-all"    onclick="setMktCat('all')">All</button>
-    <button class="filter-btn"     id="mkt-cat-geo"    onclick="setMktCat('geo')">Geo</button>
-    <button class="filter-btn"     id="mkt-cat-sports" onclick="setMktCat('sports')">Sports</button>
-    <button class="filter-btn"     id="mkt-cat-other"  onclick="setMktCat('other')">Other</button>
+    <button class="filter-btn on" id="mkt-cat-geo"    onclick="toggleMktExclude('geo')">Geo</button>
+    <button class="filter-btn on" id="mkt-cat-sports" onclick="toggleMktExclude('sports')">Sports</button>
+    <button class="filter-btn on" id="mkt-cat-other"  onclick="toggleMktExclude('other')">Other</button>
     <span style="color:var(--muted);font-size:11px" id="mkt-showing"></span>
     <span class="mkt-updated" id="mkt-updated"></span>
   </div>
@@ -293,8 +291,8 @@ function tagRow(el, d) {
 }
 
 let flowCount = 0, whaleCount = 0;
-let allMarkets = [], mktCat = 'all';
-let flowFilter = 'all';   // 'all' | 'geo' | 'whale' | 'sports'
+let allMarkets = [], mktExcluded = new Set();
+let flowExcluded = new Set();
 let mktSort = 'latest', mktSortDir = 1;  // 1=desc (biggest/newest first), -1=asc
 const prevFills = {};   // condition_id -> last known top_fill usd for change detection
 
@@ -364,9 +362,9 @@ setInterval(fetchMarkets, 10000);
 function renderMarkets(newFillIds = new Set()) {
   const q = document.getElementById('mkt-search').value.toLowerCase();
   let list = [...allMarkets];
-  if (mktCat === 'geo')    list = list.filter(m => m.is_geopolitical);
-  else if (mktCat === 'sports') list = list.filter(m => m.is_sports);
-  else if (mktCat === 'other')  list = list.filter(m => !m.is_geopolitical && !m.is_sports);
+  if (mktExcluded.has('geo'))    list = list.filter(m => !m.is_geopolitical);
+  if (mktExcluded.has('sports')) list = list.filter(m => !m.is_sports);
+  if (mktExcluded.has('other'))  list = list.filter(m => m.is_geopolitical || m.is_sports);
   if (q) list = list.filter(m => m.title.toLowerCase().includes(q));
 
   // Sort
@@ -415,29 +413,31 @@ function renderMarkets(newFillIds = new Set()) {
 }
 
 // ── Markets category filter ───────────────────────────────────────────────────
-function setMktCat(cat) {
-  mktCat = cat;
-  ['all','geo','sports','other'].forEach(k => {
-    document.getElementById('mkt-cat-' + k)?.classList.toggle('on', k === cat);
+function toggleMktExclude(cat) {
+  if (mktExcluded.has(cat)) mktExcluded.delete(cat);
+  else mktExcluded.add(cat);
+  ['geo','sports','other'].forEach(k => {
+    document.getElementById('mkt-cat-' + k)?.classList.toggle('on', !mktExcluded.has(k));
   });
   renderMarkets();
 }
 
 // ── Live feed filter ──────────────────────────────────────────────────────────
-function setFlowFilter(f) {
-  flowFilter = f;
-  ['all','geo','whale','sports'].forEach(k => {
-    document.getElementById('ff-' + k)?.classList.toggle('on', k === f);
-  });
+function toggleFlowExclude(cat) {
+  if (flowExcluded.has(cat)) flowExcluded.delete(cat);
+  else flowExcluded.add(cat);
+  document.getElementById('ff-' + cat)?.classList.toggle('on', !flowExcluded.has(cat));
   applyFlowFilter();
 }
 
 function applyFlowFilter() {
   const check = el => {
-    const show = flowFilter === 'all'
-      || (flowFilter === 'geo'    && el.dataset.geo    === '1')
-      || (flowFilter === 'whale'  && el.dataset.whale  === '1')
-      || (flowFilter === 'sports' && el.dataset.sports === '1');
+    const cats = [];
+    if (el.dataset.geo    === '1') cats.push('geo');
+    if (el.dataset.sports === '1') cats.push('sports');
+    if (el.dataset.whale  === '1') cats.push('whale');
+    // items with no category tags always show; tagged items show if any tag is not excluded
+    const show = cats.length === 0 || cats.some(c => !flowExcluded.has(c));
     el.style.display = show ? '' : 'none';
   };
   document.querySelectorAll('#flow-feed .flow-row').forEach(check);
