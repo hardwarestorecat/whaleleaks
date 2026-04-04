@@ -151,6 +151,7 @@ async def _handle(trade: dict, on_whale: WhaleCB | None, on_flow: FlowCB | None)
             "ts": ts,
             "is_whale": usd_value >= config.WHALE_THRESHOLD_USD,
             "is_geopolitical": geo,
+            "is_sports": sports,
         })
 
     # Whale alert — any trade >= threshold

@@ -139,6 +139,22 @@
   .geo-badge { font-size: 9px; background: rgba(88,166,255,.15); color: var(--blue); border-radius: 3px; padding: 1px 5px; font-weight: 700; flex-shrink: 0; width: 34px; text-align: center; }
   .geo-spacer { width: 34px; flex-shrink: 0; }
 
+  /* Live feed filter bar */
+  .feed-filters { display: flex; gap: 4px; padding: 6px 10px; border-bottom: 1px solid var(--border); background: var(--bg); flex-shrink: 0; }
+  .feed-filter-btn { padding: 3px 9px; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 10px; cursor: pointer; font-weight: 600; letter-spacing: .3px; }
+  .feed-filter-btn:hover { color: var(--text); }
+  .feed-filter-btn.on { color: var(--blue); border-color: var(--blue); background: rgba(88,166,255,.08); }
+  .feed-filter-btn.on.whale { color: var(--gold); border-color: var(--gold); background: rgba(227,179,65,.08); }
+  .feed-filter-btn.on.geo   { color: var(--blue); border-color: var(--blue); background: rgba(88,166,255,.08); }
+  .feed-filter-btn.on.sports { color: var(--purple); border-color: var(--purple); background: rgba(188,140,255,.08); }
+
+  /* Sortable market column headers */
+  .mkt-col-sortable { cursor: pointer; user-select: none; }
+  .mkt-col-sortable:hover { color: var(--text); }
+  .sort-arrow { margin-left: 3px; opacity: .5; }
+  .sort-active { color: var(--blue) !important; }
+  .sort-active .sort-arrow { opacity: 1; }
+
   .empty { text-align: center; color: var(--muted); padding: 30px; font-size: 12px; }
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
@@ -187,8 +203,14 @@
 
 <!-- Live Feed Tab -->
 <div class="view" id="view-live">
-  <div class="panel">
+  <div class="panel" style="display:flex;flex-direction:column">
     <div class="panel-header">Order Flow ≥$500 <span class="badge" id="flow-count">0</span></div>
+    <div class="feed-filters">
+      <button class="feed-filter-btn on" id="ff-all"    onclick="setFlowFilter('all')">ALL</button>
+      <button class="feed-filter-btn geo"    id="ff-geo"    onclick="setFlowFilter('geo')">GEO</button>
+      <button class="feed-filter-btn whale"  id="ff-whale"  onclick="setFlowFilter('whale')">WHALE</button>
+      <button class="feed-filter-btn sports" id="ff-sports" onclick="setFlowFilter('sports')">SPORTS</button>
+    </div>
     <div class="panel-body" id="flow-feed"><div class="empty">Waiting for orders…</div></div>
   </div>
   <div class="panel">
@@ -234,9 +256,10 @@
   </div>
   <div class="mkt-header-row">
     <div class="mkt-col-geo"></div>
-    <div class="mkt-col-title">Market</div>
-    <div class="mkt-col-vol">24h Vol</div>
-    <div class="mkt-col-fill">Largest Fill (this session)</div>
+    <div class="mkt-col-title mkt-col-sortable" id="sort-col-title" onclick="setMktSort('title')">Market <span class="sort-arrow" id="sort-arrow-title"></span></div>
+    <div class="mkt-col-vol  mkt-col-sortable" id="sort-col-vol"   onclick="setMktSort('vol')">24h Vol <span class="sort-arrow" id="sort-arrow-vol"></span></div>
+    <div class="mkt-col-fill mkt-col-sortable" id="sort-col-fill"  onclick="setMktSort('fill')">Largest Fill <span class="sort-arrow" id="sort-arrow-fill"></span></div>
+    <div style="min-width:70px;text-align:right;flex-shrink:0" class="mkt-col-sortable" id="sort-col-latest" onclick="setMktSort('latest')">Latest <span class="sort-arrow" id="sort-arrow-latest">↓</span></div>
   </div>
   <div class="market-list" id="market-list"><div class="empty">Loading…</div></div>
 </div>
@@ -255,6 +278,8 @@ const fmt = {
 
 let flowCount = 0, whaleCount = 0;
 let allMarkets = [], geoOnly = false;
+let flowFilter = 'all';   // 'all' | 'geo' | 'whale' | 'sports'
+let mktSort = 'latest', mktSortDir = -1;  // dir: -1 desc, 1 asc
 const prevFills = {};   // condition_id -> last known top_fill usd for change detection
 
 // ── Tab persistence ──────────────────────────────────────────────────────────
@@ -317,11 +342,28 @@ setInterval(fetchMarkets, 10000);
 
 function renderMarkets(newFillIds = new Set()) {
   const q = document.getElementById('mkt-search').value.toLowerCase();
-  let list = allMarkets;
+  let list = [...allMarkets];
   if (geoOnly) list = list.filter(m => m.is_geopolitical);
   if (q) list = list.filter(m => m.title.toLowerCase().includes(q));
-  document.getElementById('mkt-showing').textContent = list.length + ' markets';
 
+  // Sort
+  list.sort((a, b) => {
+    let av, bv;
+    if (mktSort === 'title') {
+      av = (a.title || '').toLowerCase(); bv = (b.title || '').toLowerCase();
+      return mktSortDir * av.localeCompare(bv);
+    } else if (mktSort === 'vol') {
+      av = a.volume24hr || 0; bv = b.volume24hr || 0;
+    } else if (mktSort === 'fill') {
+      av = a.top_fill?.usd_value || 0; bv = b.top_fill?.usd_value || 0;
+    } else { // latest
+      av = a.top_fill ? new Date(a.top_fill.ts).getTime() : 0;
+      bv = b.top_fill ? new Date(b.top_fill.ts).getTime() : 0;
+    }
+    return mktSortDir * (bv - av);
+  });
+
+  document.getElementById('mkt-showing').textContent = list.length + ' markets';
   const el = document.getElementById('market-list');
   if (!list.length) { el.innerHTML = '<div class="empty">No markets match</div>'; return; }
 
@@ -331,14 +373,18 @@ function renderMarkets(newFillIds = new Set()) {
     const fillHtml = f
       ? `<div class="mkt-fill">
            <div class="fill-usd ${f.side}">${fmt.usd(f.usd_value)} ${(f.side||'').toUpperCase()}</div>
-           <div class="fill-meta">${f.price_cents}¢ · ${fmt.addr(f.address)} · ${fmt.ts(f.ts)}</div>
+           <div class="fill-meta">${f.price_cents}¢ · ${fmt.addr(f.address)}</div>
          </div>`
-      : `<div class="mkt-fill"><div class="fill-none">no fills yet</div></div>`;
+      : `<div class="mkt-fill"><div class="fill-none">—</div></div>`;
+    const latestHtml = f
+      ? `<div style="min-width:70px;text-align:right;flex-shrink:0;font-size:10px;color:var(--muted)">${fmt.ago(f.ts)}</div>`
+      : `<div style="min-width:70px;flex-shrink:0"></div>`;
     return `<div class="market-row${isNew ? ' new' : ''}">
       ${m.is_geopolitical ? '<span class="geo-badge">GEO</span>' : '<span class="geo-spacer"></span>'}
       <div class="mkt-title" title="${m.title}">${m.title}</div>
       <div class="mkt-vol">${fmt.vol(m.volume24hr)}</div>
       ${fillHtml}
+      ${latestHtml}
     </div>`;
   }).join('');
 }
@@ -346,6 +392,37 @@ function renderMarkets(newFillIds = new Set()) {
 function toggleGeoFilter() {
   geoOnly = !geoOnly;
   document.getElementById('btn-geo').classList.toggle('on', geoOnly);
+  renderMarkets();
+}
+
+// ── Live feed filter ──────────────────────────────────────────────────────────
+function setFlowFilter(f) {
+  flowFilter = f;
+  ['all','geo','whale','sports'].forEach(k => {
+    const btn = document.getElementById('ff-' + k);
+    btn.classList.toggle('on', k === f);
+  });
+  document.querySelectorAll('.flow-row').forEach(row => {
+    const show = f === 'all'
+      || (f === 'geo'    && row.dataset.geo    === '1')
+      || (f === 'whale'  && row.dataset.whale  === '1')
+      || (f === 'sports' && row.dataset.sports === '1');
+    row.style.display = show ? '' : 'none';
+  });
+}
+
+// ── Markets sort ──────────────────────────────────────────────────────────────
+function setMktSort(col) {
+  if (mktSort === col) { mktSortDir *= -1; }
+  else { mktSort = col; mktSortDir = col === 'title' ? 1 : -1; }
+  ['title','vol','fill','latest'].forEach(c => {
+    const el = document.getElementById('sort-col-' + c);
+    const arrow = document.getElementById('sort-arrow-' + c);
+    if (!el) return;
+    const isActive = c === mktSort;
+    el.classList.toggle('sort-active', isActive);
+    arrow.textContent = isActive ? (mktSortDir === -1 ? '↓' : '↑') : '';
+  });
   renderMarkets();
 }
 
@@ -395,6 +472,9 @@ async function loadHistory() {
         const rProfit = row.potential_profit != null ? fmt.usd(row.potential_profit) : null;
         const rMult   = row.return_multiple  != null ? row.return_multiple.toFixed(2) + '×' : null;
         div.className = 'flow-row' + (row.is_whale ? ' whale-hl' : '') + (row.is_geopolitical && !row.is_whale ? ' geo-hl' : '');
+        div.dataset.whale  = row.is_whale        ? '1' : '0';
+        div.dataset.geo    = row.is_geopolitical ? '1' : '0';
+        div.dataset.sports = row.is_sports       ? '1' : '0';
         div.innerHTML = `
           <div class="flow-side">
             <div class="flow-side-badge ${sideCls}" title="${row.side}">${sideLabel}</div>
@@ -517,6 +597,15 @@ function addFlowRow(d) {
   const profit = d.potential_profit != null ? fmt.usd(d.potential_profit) : null;
   const mult   = d.return_multiple  != null ? d.return_multiple.toFixed(2) + '×' : null;
   div.className = 'flow-row new' + (d.is_whale ? ' whale-hl' : '') + (d.is_geopolitical && !d.is_whale ? ' geo-hl' : '');
+  div.dataset.whale  = d.is_whale        ? '1' : '0';
+  div.dataset.geo    = d.is_geopolitical ? '1' : '0';
+  div.dataset.sports = d.is_sports       ? '1' : '0';
+  if (flowFilter !== 'all') {
+    const show = (flowFilter === 'geo' && d.is_geopolitical)
+              || (flowFilter === 'whale' && d.is_whale)
+              || (flowFilter === 'sports' && d.is_sports);
+    if (!show) div.style.display = 'none';
+  }
   div.innerHTML = `
     <div class="flow-side">
       <div class="flow-side-badge ${sideCls}" title="${d.side}">${sideLabel}</div>
