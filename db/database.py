@@ -73,7 +73,6 @@ def init() -> None:
         CREATE INDEX IF NOT EXISTS idx_fills_address      ON fills(address);
         CREATE INDEX IF NOT EXISTS idx_fills_condition    ON fills(condition_id);
         CREATE INDEX IF NOT EXISTS idx_fills_unresolved   ON fills(condition_id) WHERE outcome IS NULL;
-        CREATE UNIQUE INDEX IF NOT EXISTS idx_fills_tx    ON fills(tx_hash) WHERE tx_hash != '';
 
         CREATE TABLE IF NOT EXISTS market_outcomes (
             condition_id    TEXT PRIMARY KEY,
@@ -82,6 +81,28 @@ def init() -> None:
             checked_at      TEXT NOT NULL
         );
         """)
+
+    # Add unique index on tx_hash — deduplicate existing rows first
+    conn = _conn()
+    idx_exists = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='index' AND name='idx_fills_tx'"
+    ).fetchone()
+    if not idx_exists:
+        # Keep only the lowest-id row for each non-empty tx_hash
+        conn.execute("""
+            DELETE FROM fills
+            WHERE tx_hash != '' AND tx_hash IS NOT NULL
+              AND id NOT IN (
+                SELECT MIN(id) FROM fills
+                WHERE tx_hash != '' AND tx_hash IS NOT NULL
+                GROUP BY tx_hash
+              )
+        """)
+        conn.commit()
+        conn.execute(
+            "CREATE UNIQUE INDEX idx_fills_tx ON fills(tx_hash) WHERE tx_hash != ''"
+        )
+        conn.commit()
 
 
 # ─── Fill writes ─────────────────────────────────────────────────────────────
