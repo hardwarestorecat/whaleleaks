@@ -202,15 +202,16 @@
 </div>
 
 <!-- Live Feed Tab -->
-<div class="view" id="view-live">
-  <div class="panel" style="display:flex;flex-direction:column">
+<div class="view" id="view-live" style="flex-direction:column">
+  <div class="feed-filters">
+    <button class="feed-filter-btn on" id="ff-all"    onclick="setFlowFilter('all')">ALL</button>
+    <button class="feed-filter-btn geo"    id="ff-geo"    onclick="setFlowFilter('geo')">GEO</button>
+    <button class="feed-filter-btn whale"  id="ff-whale"  onclick="setFlowFilter('whale')">WHALE</button>
+    <button class="feed-filter-btn sports" id="ff-sports" onclick="setFlowFilter('sports')">SPORTS</button>
+  </div>
+  <div style="display:flex;flex:1;min-height:0">
+  <div class="panel">
     <div class="panel-header">Order Flow ≥$500 <span class="badge" id="flow-count">0</span></div>
-    <div class="feed-filters">
-      <button class="feed-filter-btn on" id="ff-all"    onclick="setFlowFilter('all')">ALL</button>
-      <button class="feed-filter-btn geo"    id="ff-geo"    onclick="setFlowFilter('geo')">GEO</button>
-      <button class="feed-filter-btn whale"  id="ff-whale"  onclick="setFlowFilter('whale')">WHALE</button>
-      <button class="feed-filter-btn sports" id="ff-sports" onclick="setFlowFilter('sports')">SPORTS</button>
-    </div>
     <div class="panel-body" id="flow-feed"><div class="empty">Waiting for orders…</div></div>
   </div>
   <div class="panel">
@@ -221,6 +222,7 @@
     <div class="panel-header">Top Whales <span class="badge" id="lb-count">0</span></div>
     <div class="panel-body" id="whale-list"><div class="empty">Not enough data</div></div>
   </div>
+  </div><!-- end flex row -->
 </div>
 
 <!-- Address history modal -->
@@ -282,7 +284,7 @@ const fmt = {
 let flowCount = 0, whaleCount = 0;
 let allMarkets = [], mktCat = 'all';
 let flowFilter = 'all';   // 'all' | 'geo' | 'whale' | 'sports'
-let mktSort = 'latest', mktSortDir = -1;  // dir: -1 desc, 1 asc
+let mktSort = 'latest', mktSortDir = 1;  // 1=desc (biggest/newest first), -1=asc
 const prevFills = {};   // condition_id -> last known top_fill usd for change detection
 
 // ── Tab persistence ──────────────────────────────────────────────────────────
@@ -361,6 +363,7 @@ function renderMarkets(newFillIds = new Set()) {
     let av, bv;
     if (mktSort === 'title') {
       av = (a.title || '').toLowerCase(); bv = (b.title || '').toLowerCase();
+      // 1=A→Z, -1=Z→A
       return mktSortDir * av.localeCompare(bv);
     } else if (mktSort === 'vol') {
       av = a.volume24hr || 0; bv = b.volume24hr || 0;
@@ -370,7 +373,8 @@ function renderMarkets(newFillIds = new Set()) {
       av = a.top_fill ? new Date(a.top_fill.ts).getTime() : 0;
       bv = b.top_fill ? new Date(b.top_fill.ts).getTime() : 0;
     }
-    return mktSortDir * (bv - av);
+    // mktSortDir=1 → descending (b-a, biggest first); -1 → ascending (a-b)
+    return mktSortDir === 1 ? bv - av : av - bv;
   });
 
   document.getElementById('mkt-showing').textContent = list.length + ' markets';
@@ -418,26 +422,28 @@ function setFlowFilter(f) {
 }
 
 function applyFlowFilter() {
-  document.querySelectorAll('#flow-feed .flow-row').forEach(row => {
+  const check = el => {
     const show = flowFilter === 'all'
-      || (flowFilter === 'geo'    && row.dataset.geo    === '1')
-      || (flowFilter === 'whale'  && row.dataset.whale  === '1')
-      || (flowFilter === 'sports' && row.dataset.sports === '1');
-    row.style.display = show ? '' : 'none';
-  });
+      || (flowFilter === 'geo'    && el.dataset.geo    === '1')
+      || (flowFilter === 'whale'  && el.dataset.whale  === '1')
+      || (flowFilter === 'sports' && el.dataset.sports === '1');
+    el.style.display = show ? '' : 'none';
+  };
+  document.querySelectorAll('#flow-feed .flow-row').forEach(check);
+  document.querySelectorAll('#alert-feed .alert-item').forEach(check);
 }
 
 // ── Markets sort ──────────────────────────────────────────────────────────────
 function setMktSort(col) {
   if (mktSort === col) { mktSortDir *= -1; }
-  else { mktSort = col; mktSortDir = col === 'title' ? 1 : -1; }
+  else { mktSort = col; mktSortDir = 1; }
   ['title','vol','fill','latest'].forEach(c => {
     const el = document.getElementById('sort-col-' + c);
     const arrow = document.getElementById('sort-arrow-' + c);
     if (!el) return;
     const isActive = c === mktSort;
     el.classList.toggle('sort-active', isActive);
-    arrow.textContent = isActive ? (mktSortDir === -1 ? '↓' : '↑') : '';
+    arrow.textContent = isActive ? (mktSortDir === 1 ? '↓' : '↑') : '';
   });
   renderMarkets();
 }
@@ -652,6 +658,7 @@ function addWhaleAlert(a) {
   const feed = document.getElementById('alert-feed');
   feed.querySelector('.empty')?.remove();
   feed.prepend(buildAlertEl(a, true));
+  if (flowFilter !== 'all') applyFlowFilter();
   whaleCount++;
   document.getElementById('whale-count').textContent = whaleCount;
   const items = feed.querySelectorAll('.alert-item');
@@ -671,6 +678,9 @@ function buildAlertEl(a, isNew=false) {
   }
   const div = document.createElement('div');
   div.className = 'alert-item' + (isNew ? ' new' : '');
+  div.dataset.whale  = '1';
+  div.dataset.geo    = a.is_geopolitical ? '1' : '0';
+  div.dataset.sports = a.is_sports       ? '1' : '0';
   const profit = a.potential_profit != null ? fmt.usd(a.potential_profit) : null;
   const mult   = a.return_multiple  != null ? a.return_multiple.toFixed(2) + '×' : null;
   div.innerHTML = `

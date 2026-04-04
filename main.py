@@ -21,6 +21,7 @@ import config
 from db import database as db
 from dashboard import app as dashboard_app, broadcast, broadcast_flow, set_markets_count
 from alerts.models import WhaleAlert
+from utils.market_filter import is_geopolitical, is_sports
 from polymarket.listener import run as poly_run
 from polymarket.resolver import run as resolver_run
 from polymarket.market_cache import get_markets
@@ -63,6 +64,8 @@ async def _on_whale(alert: WhaleAlert) -> None:
         "whale_resolved_bets": alert.whale_resolved_bets,
         "whale_total_pnl": alert.whale_total_pnl,
         "ts": alert.ts.isoformat(),
+        "is_geopolitical": is_geopolitical(alert.market_title),
+        "is_sports": is_sports(alert.market_title),
     }
     broadcast(d)
     await flow_store.push_whale(d)
