@@ -179,6 +179,57 @@
   .fill-outcome.push { color: var(--muted); }
   .fill-outcome.open { color: var(--blue); }
   .addr-clickable { cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+
+  /* ── Mobile panel sub-tabs (hidden on desktop) ── */
+  .mobile-panel-tabs { display: none; gap: 2px; padding: 4px 8px; border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
+  .mobile-panel-tab { flex: 1; padding: 5px 8px; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 11px; cursor: pointer; font-weight: 600; text-align: center; }
+  .mobile-panel-tab.on { color: var(--blue); border-color: var(--blue); background: rgba(88,166,255,.08); }
+
+  /* ── Mobile responsive ── */
+  @media (max-width: 640px) {
+    /* Header */
+    header { padding: 8px 12px; gap: 6px; }
+    header h1 { font-size: 15px; }
+    #status-text { display: none; }
+
+    /* Stats bar: 3 per row, 2 rows */
+    .stats-bar { flex-wrap: wrap; }
+    .stat { flex: 0 0 33.333%; }
+    .stat .val { font-size: 16px; }
+
+    /* Tabs */
+    .tab { padding: 5px 10px; }
+
+    /* Live feed: show mobile panel sub-tabs, hide non-active panels */
+    .mobile-panel-tabs { display: flex; }
+    .panel-row { flex-direction: column; }
+    #view-live .panel { display: none; }
+    #view-live .panel.mobile-active { display: flex; flex: 1; min-height: 0; }
+    .panel.narrow { flex: 1; }
+
+    /* Market toolbar: search full-width on first row, buttons on second */
+    .market-toolbar { flex-wrap: wrap; gap: 6px; padding: 8px 12px; }
+    .market-toolbar input { width: 100%; flex: 1 1 100%; }
+    .mkt-updated { display: none; }
+    #mkt-showing { font-size: 10px; }
+
+    /* Market table: hide vol + fill columns to fit screen */
+    .mkt-col-vol, .mkt-col-fill, .mkt-vol, .mkt-fill { display: none !important; }
+    .mkt-title { white-space: normal; font-size: 11px; line-height: 1.3; }
+    .mkt-header-row { padding: 5px 10px; gap: 8px; }
+    .market-row { padding: 7px 10px; gap: 8px; }
+    .geo-badge, .geo-spacer { width: 26px; font-size: 8px; }
+    .mkt-col-geo { width: 26px; }
+
+    /* Flow rows: tighter horizontal padding */
+    .flow-row { padding: 6px 10px; gap: 6px; }
+
+    /* Address modal: full width, horizontal scroll on fill table */
+    #addr-modal-box { width: 100%; max-height: 90vh; border-radius: 0; border-left: none; border-right: none; align-self: flex-end; }
+    #addr-modal { align-items: flex-end; }
+    #addr-modal-body { overflow-x: auto; }
+    .fill-row { min-width: 520px; }
+  }
 </style>
 </head>
 <body>
@@ -208,8 +259,13 @@
     <button class="feed-filter-btn whale on"  id="ff-whale"  onclick="toggleFlowExclude('whale')">WHALE</button>
     <button class="feed-filter-btn sports on" id="ff-sports" onclick="toggleFlowExclude('sports')">SPORTS</button>
   </div>
-  <div style="display:flex;flex:1;min-height:0">
-  <div class="panel">
+  <div class="mobile-panel-tabs">
+    <button class="mobile-panel-tab on" onclick="setMobilePanel(0)">Flow</button>
+    <button class="mobile-panel-tab"   onclick="setMobilePanel(1)">Alerts</button>
+    <button class="mobile-panel-tab"   onclick="setMobilePanel(2)">Top Whales</button>
+  </div>
+  <div class="panel-row" style="display:flex;flex:1;min-height:0">
+  <div class="panel mobile-active">
     <div class="panel-header">Order Flow ≥$500 <span class="badge" id="flow-count">0</span></div>
     <div class="panel-body" id="flow-feed"><div class="empty">Waiting for orders…</div></div>
   </div>
@@ -317,6 +373,16 @@ function switchTab(name) {
   if (arrow) arrow.textContent = '↓';
   if (col)   col.classList.add('sort-active');
 })();
+
+// ── Mobile panel sub-tabs ────────────────────────────────────────────────────
+function setMobilePanel(idx) {
+  document.querySelectorAll('#view-live .panel').forEach((p, i) => {
+    p.classList.toggle('mobile-active', i === idx);
+  });
+  document.querySelectorAll('.mobile-panel-tab').forEach((t, i) => {
+    t.classList.toggle('on', i === idx);
+  });
+}
 
 // ── Stats ────────────────────────────────────────────────────────────────────
 async function refreshStats() {
