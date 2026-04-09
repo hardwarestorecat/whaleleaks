@@ -41,6 +41,7 @@
   .panel.narrow  { flex: 0 0 260px; }
   .panel-header { padding: 8px 14px; border-bottom: 1px solid var(--border); background: var(--surface); font-weight: 600; font-size: 11px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
   .panel-header .badge { background: var(--border); border-radius: 8px; padding: 1px 6px; font-size: 10px; }
+  .sort-select { background: var(--bg); color: var(--muted); border: 1px solid var(--border); border-radius: 4px; font-size: 10px; padding: 2px 6px; cursor: pointer; text-transform: none; letter-spacing: 0; }
   .panel-body { overflow-y: auto; flex: 1; }
 
   /* ── Flash animation — bright pulse ── */
@@ -70,8 +71,10 @@
   .flow-body { flex: 1; min-width: 0; }
   .flow-market { white-space: normal; word-break: break-word; line-height: 1.3; }
   .flow-meta { color: var(--muted); font-size: 10px; margin-top: 1px; }
-  .flow-profit { font-size: 10px; margin-top: 1px; color: var(--yes); }
-  .flow-right { text-align: right; flex-shrink: 0; }
+  .flow-profit { flex-shrink: 0; text-align: right; min-width: 80px; }
+  .flow-profit-amount { font-size: 15px; font-weight: 800; color: #3fb950; line-height: 1.1; }
+  .flow-profit-mult { font-size: 10px; color: var(--muted); }
+  .flow-right { text-align: right; flex-shrink: 0; min-width: 70px; }
   .flow-usd { font-weight: 600; font-size: 12px; }
   .flow-usd.whale { color: var(--gold); }
   .flow-usd.big   { color: var(--blue); }
@@ -80,7 +83,7 @@
   .geo-tag  { font-size: 9px; background: rgba(88,166,255,.15); color: var(--blue); border-radius: 3px; padding: 1px 4px; font-weight: 700; flex-shrink: 0; }
 
   /* Whale alerts */
-  .alert-item { padding: 10px 14px; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; align-items: start; }
+  .alert-item { padding: 10px 14px; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 28px 1fr auto auto; gap: 8px; align-items: start; }
   .alert-item:hover { background: rgba(255,255,255,.02); }
   .side-badge { width: 28px; height: 28px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; }
   .side-badge.yes { background: rgba(63,185,80,.15); color: var(--yes); }
@@ -90,6 +93,9 @@
   .alert-meta { color: var(--muted); font-size: 10px; margin-top: 2px; }
   .alert-whale { margin-top: 3px; font-size: 10px; display: flex; align-items: center; gap: 4px; }
   .addr { font-family: monospace; color: var(--purple); }
+  .alert-profit { text-align: right; }
+  .alert-profit-amount { font-size: 16px; font-weight: 800; color: #3fb950; line-height: 1.1; }
+  .alert-profit-mult { font-size: 10px; color: var(--muted); }
   .alert-right { text-align: right; }
   .alert-usd { font-size: 13px; font-weight: 700; color: var(--gold); }
   .alert-ts { font-size: 10px; color: var(--border); margin-top: 2px; }
@@ -288,11 +294,25 @@
   </div>
   <div class="panel-row" style="display:flex;flex:1;min-height:0">
   <div class="panel mobile-active">
-    <div class="panel-header">Order Flow ≥$500 <span class="badge" id="flow-count">0</span></div>
+    <div class="panel-header">
+      <span>Order Flow ≥$500 <span class="badge" id="flow-count">0</span></span>
+      <select class="sort-select" id="flow-sort" onchange="sortFlowFeed()">
+        <option value="latest">Latest</option>
+        <option value="usd">Amount</option>
+        <option value="profit">Winnings</option>
+      </select>
+    </div>
     <div class="panel-body" id="flow-feed"><div class="empty">Waiting for orders…</div></div>
   </div>
   <div class="panel">
-    <div class="panel-header">Whale Alerts ≥$3k <span class="badge" id="whale-count">0</span></div>
+    <div class="panel-header">
+      <span>Whale Alerts ≥$3k <span class="badge" id="whale-count">0</span></span>
+      <select class="sort-select" id="whale-sort" onchange="sortWhaleFeed()">
+        <option value="latest">Latest</option>
+        <option value="usd">Amount</option>
+        <option value="profit">Winnings</option>
+      </select>
+    </div>
     <div class="panel-body" id="alert-feed"><div class="empty">No whales yet…</div></div>
   </div>
   <div class="panel narrow">
@@ -659,6 +679,9 @@ async function loadHistory() {
         const rProfit = row.potential_profit != null ? fmt.usd(row.potential_profit) : null;
         const rMult   = row.return_multiple  != null ? row.return_multiple.toFixed(2) + '×' : null;
         div.className = 'flow-row' + (row.is_whale ? ' whale-hl' : '') + (row.is_geopolitical && !row.is_whale ? ' geo-hl' : '');
+        div.dataset.sortTs = new Date(row.ts).getTime();
+        div.dataset.sortUsd = row.usd_value;
+        div.dataset.sortProfit = row.potential_profit || 0;
         tagRow(div, row);
         div.innerHTML = `
           <div class="flow-side">
@@ -668,10 +691,10 @@ async function loadHistory() {
           <div class="flow-body">
             <div class="flow-market">${row.market_title}</div>
             <div class="flow-meta">${fmt.addr(row.address)}</div>
-            ${rProfit ? `<div class="flow-profit">wins ${rProfit} (${rMult})</div>` : ''}
           </div>
           ${row.is_whale ? '<span class="whale-tag">WHALE</span>' : ''}
           ${row.is_geopolitical && !row.is_whale ? '<span class="geo-tag">GEO</span>' : ''}
+          ${rProfit ? `<div class="flow-profit"><div class="flow-profit-amount">+${fmt.vol(row.potential_profit)}</div><div class="flow-profit-mult">${rMult}</div></div>` : ''}
           <div class="flow-right">
             <div class="flow-usd ${usdCls}">${fmt.usd(row.usd_value)}</div>
             <div class="flow-ts">${fmt.ts(row.ts)}</div>
@@ -782,6 +805,9 @@ function addFlowRow(d) {
   const profit = d.potential_profit != null ? fmt.usd(d.potential_profit) : null;
   const mult   = d.return_multiple  != null ? d.return_multiple.toFixed(2) + '×' : null;
   div.className = 'flow-row new' + (d.is_whale ? ' whale-hl' : '') + (d.is_geopolitical && !d.is_whale ? ' geo-hl' : '');
+  div.dataset.sortTs = new Date(d.ts).getTime();
+  div.dataset.sortUsd = d.usd_value;
+  div.dataset.sortProfit = d.potential_profit || 0;
   tagRow(div, d);
   div.innerHTML = `
     <div class="flow-side">
@@ -791,10 +817,10 @@ function addFlowRow(d) {
     <div class="flow-body">
       <div class="flow-market">${d.market_title}</div>
       <div class="flow-meta">${fmt.addr(d.address)}</div>
-      ${profit ? `<div class="flow-profit">wins ${profit} (${mult})</div>` : ''}
     </div>
     ${d.is_whale ? '<span class="whale-tag">WHALE</span>' : ''}
     ${d.is_geopolitical && !d.is_whale ? '<span class="geo-tag">GEO</span>' : ''}
+    ${profit ? `<div class="flow-profit"><div class="flow-profit-amount">+${fmt.vol(d.potential_profit)}</div><div class="flow-profit-mult">${mult}</div></div>` : ''}
     <div class="flow-right">
       <div class="flow-usd ${usdCls}">${fmt.usd(d.usd_value)}</div>
       <div class="flow-ts">${fmt.ts(d.ts)}</div>
@@ -833,6 +859,9 @@ function buildAlertEl(a, isNew=false) {
   }
   const div = document.createElement('div');
   div.className = 'alert-item' + (isNew ? ' new' : '');
+  div.dataset.sortTs = new Date(a.ts || new Date().toISOString()).getTime();
+  div.dataset.sortUsd = a.usd_value;
+  div.dataset.sortProfit = a.potential_profit || 0;
   tagRow(div, {...a, is_whale: true, market_title: a.market_title || a.market_id});
   const profit = a.potential_profit != null ? fmt.usd(a.potential_profit) : null;
   const mult   = a.return_multiple  != null ? a.return_multiple.toFixed(2) + '×' : null;
@@ -840,15 +869,29 @@ function buildAlertEl(a, isNew=false) {
     <div class="side-badge ${side}">${side==='yes'?'YES':side==='no'?'NO':'?'}</div>
     <div>
       <div class="alert-market">${a.market_title||a.market_id}</div>
-      <div class="alert-meta">${a.price_cents}¢ / share${profit ? ` · wins <strong style="color:var(--yes)">${profit}</strong> (${mult})` : ''}</div>
+      <div class="alert-meta">${a.price_cents}¢ / share</div>
       ${a.whale_address?`<div class="alert-whale">${fmt.addr(a.whale_address)}${pill}</div>`:''}
     </div>
+    ${profit ? `<div class="alert-profit"><div class="alert-profit-amount">+${fmt.vol(a.potential_profit)}</div><div class="alert-profit-mult">${mult}</div></div>` : '<div></div>'}
     <div class="alert-right">
       <div class="alert-usd">${fmt.usd(a.usd_value)}</div>
       <div class="alert-ts">${fmt.ts(a.ts||new Date().toISOString())}</div>
     </div>`;
   return div;
 }
+
+// ── Feed sorting ─────────────────────────────────────────────────────────────
+function sortFeed(containerId, selector) {
+  const feed = document.getElementById(containerId);
+  const rows = [...feed.querySelectorAll(selector)];
+  if (!rows.length) return;
+  const key = document.getElementById(containerId === 'flow-feed' ? 'flow-sort' : 'whale-sort').value;
+  const attr = key === 'usd' ? 'sortUsd' : key === 'profit' ? 'sortProfit' : 'sortTs';
+  rows.sort((a, b) => parseFloat(b.dataset[attr]) - parseFloat(a.dataset[attr]));
+  rows.forEach(r => feed.appendChild(r));
+}
+function sortFlowFeed()  { sortFeed('flow-feed', '.flow-row'); }
+function sortWhaleFeed() { sortFeed('alert-feed', '.alert-item'); }
 </script>
 </body>
 </html>

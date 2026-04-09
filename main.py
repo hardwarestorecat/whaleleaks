@@ -64,9 +64,21 @@ async def _on_whale(alert: WhaleAlert) -> None:
         "whale_resolved_bets": alert.whale_resolved_bets,
         "whale_total_pnl": alert.whale_total_pnl,
         "ts": alert.ts.isoformat(),
-        "is_geopolitical": is_geopolitical(alert.market_title),
-        "is_sports": is_sports(alert.market_title),
     }
+    # Enrich with API-sourced categories from market cache
+    from polymarket.market_cache import lookup_market
+    cached = lookup_market((alert.market_id or "").lower())
+    if cached:
+        d["is_geopolitical"] = cached.get("is_geopolitical", d.get("is_geopolitical", False))
+        d["is_sports"]       = cached.get("is_sports", d.get("is_sports", False))
+        d["is_politics"]     = cached.get("is_politics", False)
+        d["is_crypto"]       = cached.get("is_crypto", False)
+        d["is_finance"]      = cached.get("is_finance", False)
+        d["is_tech"]         = cached.get("is_tech", False)
+        d["is_culture"]      = cached.get("is_culture", False)
+    else:
+        d["is_geopolitical"] = is_geopolitical(alert.market_title)
+        d["is_sports"]       = is_sports(alert.market_title)
     broadcast(d)
     await flow_store.push_whale(d)
 
