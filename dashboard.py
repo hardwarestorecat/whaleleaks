@@ -192,7 +192,12 @@ def recent_flow(limit: int = 500):
 @app.get("/api/whale-history")
 def recent_whale_history(limit: int = 200):
     from store import flow_store
-    return flow_store.get_recent_whales(limit)
+    all_whales = flow_store.get_recent_whales(limit * 3)  # fetch extra to account for filtering
+    return [
+        w for w in all_whales
+        if w.get("usd_value", 0) >= config.WHALE_THRESHOLD_USD
+        and w.get("potential_profit", 0) >= config.WHALE_MIN_PROFIT_USD
+    ][:limit]
 
 
 @app.get("/api/stream")
