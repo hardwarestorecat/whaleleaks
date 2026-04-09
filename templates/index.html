@@ -305,8 +305,8 @@
 <header>
   <h1>whale<span>leaks</span></h1>
   <div class="tabs">
-    <div class="tab" id="tab-live"    onclick="switchTab('live')">Live Feed</div>
-    <div class="tab" id="tab-markets" onclick="switchTab('markets')">Markets <span class="badge" id="market-tab-count">—</span></div>
+    <div class="tab" id="tab-live"    onclick="switchTab('live')">Whale Moves</div>
+    <div class="tab" id="tab-markets" onclick="switchTab('markets')">Live Feed <span class="badge" id="market-tab-count">—</span></div>
   </div>
   <div><span id="status-dot"></span><span id="status-text">connecting…</span></div>
 </header>
@@ -361,7 +361,7 @@
     <div class="panel-body" id="alert-feed"><div class="empty">No whales yet…</div></div>
   </div>
   <div class="panel narrow">
-    <div class="panel-header">Top Whales <span class="badge" id="lb-count">0</span></div>
+    <div class="panel-header">Top Whales <span class="badge" id="lb-count">0</span> <span id="lb-mode" style="font-size:9px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0"></span></div>
     <div class="panel-body" id="whale-list"><div class="empty">Not enough data</div></div>
   </div>
   </div><!-- end flex row -->
@@ -684,12 +684,17 @@ function setMktSort(col) {
 // ── Leaderboard ──────────────────────────────────────────────────────────────
 async function refreshWhales() {
   try {
-    const data = await fetch('/api/whales').then(r => r.json());
+    const res = await fetch('/api/whales').then(r => r.json());
+    const { mode, whales: data } = res;
     const el = document.getElementById('whale-list');
+    const hdr = document.getElementById('lb-mode');
     document.getElementById('lb-count').textContent = data.length;
-    if (!data.length) return;
+    if (hdr) hdr.textContent = mode === 'win_rate' ? 'by win rate' : 'by total earned';
+    if (!data.length) { el.innerHTML = '<div class="empty">Not enough data yet</div>'; return; }
     el.innerHTML = data.map((w, i) => {
       const wr = w.win_rate != null ? Math.round(w.win_rate * 100) : null;
+      const pnlPos = w.total_pnl_usd >= 0;
+      const pnlStr = (pnlPos ? '+' : '') + fmt.usd(w.total_pnl_usd);
       return `<div class="lb-row">
         <div class="lb-rank ${i<3?'top':''}">${i+1}</div>
         <div class="lb-info">
@@ -697,8 +702,8 @@ async function refreshWhales() {
           <div class="lb-stats">${w.resolved_fills} resolved · ${w.total_fills} fills</div>
         </div>
         <div class="lb-right">
-          <div class="lb-wr ${wr>=65?'pos':wr<50&&wr!=null?'neg':''}">${wr!=null?wr+'%':'—'}</div>
-          <div class="lb-pnl ${w.total_pnl_usd>=0?'pos':'neg'}">${fmt.usd(w.total_pnl_usd)}</div>
+          <div class="lb-wr ${wr>=65?'pos':wr!=null&&wr<50?'neg':''}">${wr!=null?wr+'%':'—'}</div>
+          <div class="lb-pnl ${pnlPos?'pos':'neg'}">${pnlStr}</div>
         </div>
       </div>`;
     }).join('');

@@ -99,7 +99,10 @@ async def recent_alerts(limit: int = 50):
 @app.get("/api/whales")
 async def top_whales(limit: int = 25):
     rows = db.get_top_winners(limit)
-    return rows
+    if rows:
+        return {"mode": "win_rate", "whales": rows}
+    rows = db.get_top_earners(limit)
+    return {"mode": "earners", "whales": rows}
 
 
 @app.get("/api/markets")
