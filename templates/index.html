@@ -140,7 +140,7 @@
   .mkt-profit { min-width: 110px; text-align: right; flex-shrink: 0; }
   .profit-value { font-size: 13px; font-weight: 700; color: #3fb950; }
   .profit-mult { font-size: 10px; color: var(--muted); margin-left: 4px; }
-  .cat-badge { font-size: 9px; border-radius: 3px; padding: 1px 5px; font-weight: 700; flex-shrink: 0; width: 34px; text-align: center; }
+  .cat-badge { font-size: 8px; border-radius: 3px; padding: 1px 4px; font-weight: 700; flex-shrink: 0; min-width: 34px; text-align: center; white-space: nowrap; }
   .cat-badge.geo { background: rgba(88,166,255,.15); color: var(--blue); }
   .cat-badge.pol { background: rgba(187,128,255,.15); color: #bb80ff; }
   .cat-badge.spt { background: rgba(63,185,80,.15); color: #3fb950; }
@@ -148,8 +148,8 @@
   .cat-badge.fin { background: rgba(255,215,0,.15); color: #d4a800; }
   .cat-badge.tch { background: rgba(0,200,200,.15); color: #00c8c8; }
   .cat-badge.cul { background: rgba(255,105,180,.15); color: #ff69b4; }
-  .geo-badge { font-size: 9px; background: rgba(88,166,255,.15); color: var(--blue); border-radius: 3px; padding: 1px 5px; font-weight: 700; flex-shrink: 0; width: 34px; text-align: center; }
-  .geo-spacer { width: 34px; flex-shrink: 0; }
+  .geo-badge { font-size: 8px; background: rgba(88,166,255,.15); color: var(--blue); border-radius: 3px; padding: 1px 4px; font-weight: 700; flex-shrink: 0; min-width: 34px; text-align: center; }
+  .geo-spacer { min-width: 34px; flex-shrink: 0; }
 
   /* Live feed filter bar */
   .feed-filters { display: flex; gap: 4px; padding: 6px 10px; border-bottom: 1px solid var(--border); background: var(--bg); flex-shrink: 0; }
@@ -272,14 +272,14 @@
 <!-- Live Feed Tab -->
 <div class="view" id="view-live" style="flex-direction:column">
   <div class="feed-filters">
-    <button class="feed-filter-btn whale on"    id="ff-whale"    onclick="toggleFlowExclude('whale')">WHALE</button>
-    <button class="feed-filter-btn geo on"      id="ff-geo"      onclick="toggleFlowExclude('geo')">GEO</button>
-    <button class="feed-filter-btn politics on"  id="ff-politics" onclick="toggleFlowExclude('politics')">POL</button>
-    <button class="feed-filter-btn sports on"    id="ff-sports"   onclick="toggleFlowExclude('sports')">SPORTS</button>
-    <button class="feed-filter-btn crypto on"    id="ff-crypto"   onclick="toggleFlowExclude('crypto')">CRYPTO</button>
-    <button class="feed-filter-btn finance on"   id="ff-finance"  onclick="toggleFlowExclude('finance')">FIN</button>
-    <button class="feed-filter-btn tech on"      id="ff-tech"     onclick="toggleFlowExclude('tech')">TECH</button>
-    <button class="feed-filter-btn culture on"   id="ff-culture"  onclick="toggleFlowExclude('culture')">CUL</button>
+    <button class="feed-filter-btn whale on"    id="ff-whale"    onclick="toggleFlowExclude('whale')">Whale</button>
+    <button class="feed-filter-btn geo on"      id="ff-geo"      onclick="toggleFlowExclude('geo')">Geopolitics</button>
+    <button class="feed-filter-btn politics on"  id="ff-politics" onclick="toggleFlowExclude('politics')">Politics</button>
+    <button class="feed-filter-btn sports on"    id="ff-sports"   onclick="toggleFlowExclude('sports')">Sports</button>
+    <button class="feed-filter-btn crypto on"    id="ff-crypto"   onclick="toggleFlowExclude('crypto')">Crypto</button>
+    <button class="feed-filter-btn finance on"   id="ff-finance"  onclick="toggleFlowExclude('finance')">Finance</button>
+    <button class="feed-filter-btn tech on"      id="ff-tech"     onclick="toggleFlowExclude('tech')">Tech</button>
+    <button class="feed-filter-btn culture on"   id="ff-culture"  onclick="toggleFlowExclude('culture')">Culture</button>
   </div>
   <div class="mobile-panel-tabs">
     <button class="mobile-panel-tab on" onclick="setMobilePanel(0)">Flow</button>
@@ -475,13 +475,13 @@ function mktRowHtml(m, isNew) {
   const latestHtml = f
     ? `<div style="min-width:70px;text-align:right;flex-shrink:0;font-size:10px;color:var(--muted)">${fmt.ago(f.ts)}</div>`
     : `<div style="min-width:70px;flex-shrink:0"></div>`;
-  const catBadge = m.is_geopolitical ? '<span class="cat-badge geo">GEO</span>'
-    : m.is_politics ? '<span class="cat-badge pol">POL</span>'
-    : m.is_sports   ? '<span class="cat-badge spt">SPT</span>'
-    : m.is_crypto   ? '<span class="cat-badge cry">CRY</span>'
-    : m.is_finance  ? '<span class="cat-badge fin">FIN</span>'
-    : m.is_tech     ? '<span class="cat-badge tch">TCH</span>'
-    : m.is_culture  ? '<span class="cat-badge cul">CUL</span>'
+  const catBadge = m.is_geopolitical ? '<span class="cat-badge geo">Geo</span>'
+    : m.is_politics ? '<span class="cat-badge pol">Politics</span>'
+    : m.is_sports   ? '<span class="cat-badge spt">Sports</span>'
+    : m.is_crypto   ? '<span class="cat-badge cry">Crypto</span>'
+    : m.is_finance  ? '<span class="cat-badge fin">Finance</span>'
+    : m.is_tech     ? '<span class="cat-badge tch">Tech</span>'
+    : m.is_culture  ? '<span class="cat-badge cul">Culture</span>'
     : '<span class="geo-spacer"></span>';
   return `<div class="market-row${isNew ? ' new' : ''}">
     ${catBadge}
