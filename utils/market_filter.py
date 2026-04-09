@@ -4,20 +4,13 @@ import re
 from config import GEOPOLITICAL_KEYWORDS
 
 _SPORTS_KEYWORDS = [
-    # Team sports signals
-    "vs.", "vs ", " vs ", "match", "game", "score", "win on ", "beat ",
+    # Strong signal — "vs" almost always means a sporting matchup
+    " vs ", " vs. ",
     # Leagues / competitions
     "nfl", "nba", "nhl", "mlb", "nascar", "mls", "ufc", "pga",
     "fifa", "world cup", "champions league", "premier league", "la liga",
-    "bundesliga", "serie a", "ligue 1", "copa", "euros", "euro 2",
-    "super bowl", "playoffs", "championship", "tournament", "open",
-    # Sports
-    "soccer", "football", "basketball", "baseball", "hockey", "tennis",
-    "golf", "cricket", "rugby", "boxing", "mma", "wrestling", "formula 1",
-    "f1 ", " f1", "grand prix", "nascar",
-    # Common team/athlete indicators
-    "fc ", " fc", "afc ", "nfc ", "wildcats", "bulldogs", "eagles",
-    "patriots", "cowboys", "lakers", "celtics", "yankees", "cubs",
+    "bundesliga", "serie a", "ligue 1", "super bowl", "playoffs",
+    "grand prix", "formula 1",
 ]
 
 

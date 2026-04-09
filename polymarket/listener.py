@@ -128,9 +128,13 @@ async def _handle(trade: dict, on_whale: WhaleCB | None, on_flow: FlowCB | None)
 
     # Track largest fill per market (weekly high, Redis-backed)
     if usd_value >= config.FLOW_THRESHOLD_USD:
+        price_frac_h = price_cents / 100
+        pot_payout_h = round(usd_value / price_frac_h, 2) if price_frac_h else 0
         await flow_store.set_market_high(condition_id, {
             "usd_value": usd_value, "side": side,
             "price_cents": price_cents, "address": maker, "ts": ts,
+            "potential_profit": round(pot_payout_h - usd_value, 2),
+            "return_multiple": round(1 / price_frac_h, 2) if price_frac_h else 0,
         })
 
     # Flow panel — everything >= FLOW_THRESHOLD

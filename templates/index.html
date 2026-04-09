@@ -126,6 +126,7 @@
   .mkt-col-title { flex: 1; }
   .mkt-col-vol   { min-width: 70px; text-align: right; flex-shrink: 0; }
   .mkt-col-fill  { min-width: 180px; text-align: right; flex-shrink: 0; }
+  .mkt-col-profit { min-width: 110px; text-align: right; flex-shrink: 0; }
   .market-row { padding: 8px 16px; border-bottom: 1px solid rgba(48,54,61,.4); display: flex; align-items: center; gap: 12px; }
   .market-row:hover { background: rgba(255,255,255,.02); }
   .market-row.new { animation: newflash .9s ease forwards; }
@@ -136,6 +137,17 @@
   .fill-usd.yes { color: var(--yes); } .fill-usd.no { color: var(--no); }
   .fill-meta { font-size: 10px; color: var(--muted); margin-top: 1px; }
   .fill-none { font-size: 10px; color: rgba(48,54,61,.8); }
+  .mkt-profit { min-width: 110px; text-align: right; flex-shrink: 0; }
+  .profit-value { font-size: 13px; font-weight: 700; color: #3fb950; }
+  .profit-mult { font-size: 10px; color: var(--muted); margin-left: 4px; }
+  .cat-badge { font-size: 9px; border-radius: 3px; padding: 1px 5px; font-weight: 700; flex-shrink: 0; width: 34px; text-align: center; }
+  .cat-badge.geo { background: rgba(88,166,255,.15); color: var(--blue); }
+  .cat-badge.pol { background: rgba(187,128,255,.15); color: #bb80ff; }
+  .cat-badge.spt { background: rgba(63,185,80,.15); color: #3fb950; }
+  .cat-badge.cry { background: rgba(255,166,0,.15); color: #ffa600; }
+  .cat-badge.fin { background: rgba(255,215,0,.15); color: #d4a800; }
+  .cat-badge.tch { background: rgba(0,200,200,.15); color: #00c8c8; }
+  .cat-badge.cul { background: rgba(255,105,180,.15); color: #ff69b4; }
   .geo-badge { font-size: 9px; background: rgba(88,166,255,.15); color: var(--blue); border-radius: 3px; padding: 1px 5px; font-weight: 700; flex-shrink: 0; width: 34px; text-align: center; }
   .geo-spacer { width: 34px; flex-shrink: 0; }
 
@@ -214,7 +226,7 @@
     #mkt-showing { font-size: 10px; }
 
     /* Market table: hide vol + fill columns to fit screen */
-    .mkt-col-vol, .mkt-col-fill, .mkt-vol, .mkt-fill { display: none !important; }
+    .mkt-col-vol, .mkt-col-fill, .mkt-vol, .mkt-fill, .mkt-col-profit, .mkt-profit { display: none !important; }
     .mkt-title { white-space: normal; font-size: 11px; line-height: 1.3; }
     .mkt-header-row { padding: 5px 10px; gap: 8px; }
     .market-row { padding: 7px 10px; gap: 8px; }
@@ -307,9 +319,14 @@
 <div class="view" id="view-markets">
   <div class="market-toolbar">
     <input type="text" id="mkt-search" placeholder="Search markets…" oninput="renderMarkets()">
-    <button class="filter-btn on" id="mkt-cat-geo"    onclick="toggleMktExclude('geo')">Geo</button>
-    <button class="filter-btn on" id="mkt-cat-sports" onclick="toggleMktExclude('sports')">Sports</button>
-    <button class="filter-btn on" id="mkt-cat-other"  onclick="toggleMktExclude('other')">Other</button>
+    <button class="filter-btn on" id="mkt-cat-politics" onclick="toggleMktExclude('politics')">Politics</button>
+    <button class="filter-btn on" id="mkt-cat-geo"      onclick="toggleMktExclude('geo')">Geo</button>
+    <button class="filter-btn on" id="mkt-cat-sports"   onclick="toggleMktExclude('sports')">Sports</button>
+    <button class="filter-btn on" id="mkt-cat-crypto"   onclick="toggleMktExclude('crypto')">Crypto</button>
+    <button class="filter-btn on" id="mkt-cat-finance"  onclick="toggleMktExclude('finance')">Finance</button>
+    <button class="filter-btn on" id="mkt-cat-tech"     onclick="toggleMktExclude('tech')">Tech</button>
+    <button class="filter-btn on" id="mkt-cat-culture"  onclick="toggleMktExclude('culture')">Culture</button>
+    <button class="filter-btn on" id="mkt-cat-other"    onclick="toggleMktExclude('other')">Other</button>
     <span style="color:var(--muted);font-size:11px" id="mkt-showing"></span>
     <span class="mkt-updated" id="mkt-updated"></span>
   </div>
@@ -318,6 +335,7 @@
     <div class="mkt-col-title mkt-col-sortable" id="sort-col-title" onclick="setMktSort('title')">Market <span class="sort-arrow" id="sort-arrow-title"></span></div>
     <div class="mkt-col-vol  mkt-col-sortable" id="sort-col-vol"   onclick="setMktSort('vol')">24h Vol <span class="sort-arrow" id="sort-arrow-vol"></span></div>
     <div class="mkt-col-fill mkt-col-sortable" id="sort-col-fill"  onclick="setMktSort('fill')">Largest Fill <span class="sort-arrow" id="sort-arrow-fill"></span></div>
+    <div class="mkt-col-profit mkt-col-sortable" id="sort-col-profit" onclick="setMktSort('profit')">Potential Profit <span class="sort-arrow" id="sort-arrow-profit"></span></div>
     <div style="min-width:70px;text-align:right;flex-shrink:0" class="mkt-col-sortable" id="sort-col-latest" onclick="setMktSort('latest')">Latest <span class="sort-arrow" id="sort-arrow-latest">↓</span></div>
   </div>
   <div class="market-list" id="market-list"><div class="empty">Loading…</div></div>
@@ -336,7 +354,7 @@ const fmt = {
 };
 
 // ── Client-side category detection (mirrors Python utils/market_filter.py) ────
-const _SPORTS_KW = ['vs.', ' vs ', 'match', ' game ', 'score', 'win on ', 'nfl', 'nba', 'nhl', 'mlb', 'mls', 'ufc', 'pga', 'fifa', 'world cup', 'champions league', 'premier league', 'la liga', 'bundesliga', 'serie a', 'ligue 1', 'copa', 'super bowl', 'playoffs', 'soccer', 'basketball', 'baseball', 'hockey', 'tennis', 'golf', 'cricket', 'rugby', 'boxing', ' mma', 'formula 1', 'grand prix', 'fc ', ' fc', 'wildcats', 'bulldogs', 'eagles', 'patriots', 'cowboys', 'lakers', 'celtics', 'yankees'];
+const _SPORTS_KW = [' vs ', ' vs. ', 'nfl', 'nba', 'nhl', 'mlb', 'mls', 'ufc', 'pga', 'fifa', 'world cup', 'champions league', 'premier league', 'la liga', 'bundesliga', 'serie a', 'ligue 1', 'super bowl', 'playoffs', 'grand prix', 'formula 1'];
 const _GEO_KW = ['war', 'conflict', 'battle', 'attack', 'invasion', 'ceasefire', 'military', 'airstrike', 'missile', 'nuclear', 'nato', 'president', 'prime minister', 'election', 'vote', 'coup', 'assassination', 'congress', 'senate', 'sanction', 'treaty', 'summit', 'diplomat', 'united nations', 'embargo', 'ukraine', 'russia', 'china', 'taiwan', 'iran', 'israel', 'gaza', 'north korea', 'tariff', 'trade war', 'federal reserve', 'fed rate', 'revolution', 'uprising', 'civil war', 'terrorist', 'cyberattack'];
 function isSports(t) { t = (t||'').toLowerCase(); return _SPORTS_KW.some(k => t.includes(k)); }
 function isGeo(t)    { t = (t||'').toLowerCase(); return _GEO_KW.some(k => t.includes(k)); }
@@ -351,6 +369,9 @@ let allMarkets = [], mktExcluded = new Set();
 let flowExcluded = new Set();
 let mktSort = 'latest', mktSortDir = 1;  // 1=desc (biggest/newest first), -1=asc
 const prevFills = {};   // condition_id -> last known top_fill usd for change detection
+let mktFiltered = [];   // current filtered+sorted list for infinite scroll
+let mktRendered = 0;    // how many rows rendered so far
+const MKT_PAGE = 50;    // rows per scroll batch
 
 // ── Tab persistence ──────────────────────────────────────────────────────────
 function switchTab(name) {
@@ -425,12 +446,67 @@ async function fetchMarkets() {
 }
 setInterval(fetchMarkets, 10000);
 
+function mktRowHtml(m, isNew) {
+  const f = m.top_fill;
+  const fillHtml = f
+    ? `<div class="mkt-fill">
+         <div class="fill-usd ${f.side}">${fmt.usd(f.usd_value)} ${(f.side||'').toUpperCase()}</div>
+         <div class="fill-meta">${f.price_cents}¢ · ${fmt.addr(f.address)}</div>
+       </div>`
+    : `<div class="mkt-fill"><div class="fill-none">—</div></div>`;
+  const profitHtml = f && f.potential_profit
+    ? `<div class="mkt-profit"><span class="profit-value">+${fmt.vol(f.potential_profit)}</span><span class="profit-mult">${f.return_multiple ? f.return_multiple.toFixed(1) + '×' : ''}</span></div>`
+    : `<div class="mkt-profit"><span class="fill-none">—</span></div>`;
+  const latestHtml = f
+    ? `<div style="min-width:70px;text-align:right;flex-shrink:0;font-size:10px;color:var(--muted)">${fmt.ago(f.ts)}</div>`
+    : `<div style="min-width:70px;flex-shrink:0"></div>`;
+  const catBadge = m.is_geopolitical ? '<span class="cat-badge geo">GEO</span>'
+    : m.is_politics ? '<span class="cat-badge pol">POL</span>'
+    : m.is_sports   ? '<span class="cat-badge spt">SPT</span>'
+    : m.is_crypto   ? '<span class="cat-badge cry">CRY</span>'
+    : m.is_finance  ? '<span class="cat-badge fin">FIN</span>'
+    : m.is_tech     ? '<span class="cat-badge tch">TCH</span>'
+    : m.is_culture  ? '<span class="cat-badge cul">CUL</span>'
+    : '<span class="geo-spacer"></span>';
+  return `<div class="market-row${isNew ? ' new' : ''}">
+    ${catBadge}
+    <div class="mkt-title" title="${m.title}">${m.title}</div>
+    <div class="mkt-vol">${fmt.vol(m.volume24hr)}</div>
+    ${fillHtml}
+    ${profitHtml}
+    ${latestHtml}
+  </div>`;
+}
+
+function appendMarketPage(newFillIds = new Set()) {
+  const el = document.getElementById('market-list');
+  const end = Math.min(mktRendered + MKT_PAGE, mktFiltered.length);
+  let html = '';
+  for (let i = mktRendered; i < end; i++) {
+    html += mktRowHtml(mktFiltered[i], newFillIds.has(mktFiltered[i].condition_id));
+  }
+  el.insertAdjacentHTML('beforeend', html);
+  mktRendered = end;
+}
+
 function renderMarkets(newFillIds = new Set()) {
   const q = document.getElementById('mkt-search').value.toLowerCase();
   let list = [...allMarkets];
-  if (mktExcluded.has('geo'))    list = list.filter(m => !m.is_geopolitical);
-  if (mktExcluded.has('sports')) list = list.filter(m => !m.is_sports);
-  if (mktExcluded.has('other'))  list = list.filter(m => m.is_geopolitical || m.is_sports);
+  if (mktExcluded.size) {
+    list = list.filter(m => {
+      const cats = [];
+      if (m.is_politics)     cats.push('politics');
+      if (m.is_geopolitical) cats.push('geo');
+      if (m.is_sports)       cats.push('sports');
+      if (m.is_crypto)       cats.push('crypto');
+      if (m.is_finance)      cats.push('finance');
+      if (m.is_tech)         cats.push('tech');
+      if (m.is_culture)      cats.push('culture');
+      if (!cats.length)      cats.push('other');
+      // Show if at least one of its categories is not excluded
+      return cats.some(c => !mktExcluded.has(c));
+    });
+  }
   if (q) list = list.filter(m => m.title.toLowerCase().includes(q));
 
   // Sort
@@ -438,51 +514,43 @@ function renderMarkets(newFillIds = new Set()) {
     let av, bv;
     if (mktSort === 'title') {
       av = (a.title || '').toLowerCase(); bv = (b.title || '').toLowerCase();
-      // 1=A→Z, -1=Z→A
       return mktSortDir * av.localeCompare(bv);
     } else if (mktSort === 'vol') {
       av = a.volume24hr || 0; bv = b.volume24hr || 0;
     } else if (mktSort === 'fill') {
       av = a.top_fill?.usd_value || 0; bv = b.top_fill?.usd_value || 0;
+    } else if (mktSort === 'profit') {
+      av = a.top_fill?.potential_profit || 0; bv = b.top_fill?.potential_profit || 0;
     } else { // latest
       av = a.top_fill ? new Date(a.top_fill.ts).getTime() : 0;
       bv = b.top_fill ? new Date(b.top_fill.ts).getTime() : 0;
     }
-    // mktSortDir=1 → descending (b-a, biggest first); -1 → ascending (a-b)
     return mktSortDir === 1 ? bv - av : av - bv;
   });
 
+  mktFiltered = list;
+  mktRendered = 0;
   document.getElementById('mkt-showing').textContent = list.length + ' markets';
   const el = document.getElementById('market-list');
   if (!list.length) { el.innerHTML = '<div class="empty">No markets match</div>'; return; }
-
-  el.innerHTML = list.map(m => {
-    const f = m.top_fill;
-    const isNew = newFillIds.has(m.condition_id);
-    const fillHtml = f
-      ? `<div class="mkt-fill">
-           <div class="fill-usd ${f.side}">${fmt.usd(f.usd_value)} ${(f.side||'').toUpperCase()}</div>
-           <div class="fill-meta">${f.price_cents}¢ · ${fmt.addr(f.address)}</div>
-         </div>`
-      : `<div class="mkt-fill"><div class="fill-none">—</div></div>`;
-    const latestHtml = f
-      ? `<div style="min-width:70px;text-align:right;flex-shrink:0;font-size:10px;color:var(--muted)">${fmt.ago(f.ts)}</div>`
-      : `<div style="min-width:70px;flex-shrink:0"></div>`;
-    return `<div class="market-row${isNew ? ' new' : ''}">
-      ${m.is_geopolitical ? '<span class="geo-badge">GEO</span>' : '<span class="geo-spacer"></span>'}
-      <div class="mkt-title" title="${m.title}">${m.title}</div>
-      <div class="mkt-vol">${fmt.vol(m.volume24hr)}</div>
-      ${fillHtml}
-      ${latestHtml}
-    </div>`;
-  }).join('');
+  el.innerHTML = '';
+  appendMarketPage(newFillIds);
 }
 
+// Infinite scroll — load more rows when near the bottom
+document.getElementById('market-list').addEventListener('scroll', function() {
+  if (mktRendered >= mktFiltered.length) return;
+  if (this.scrollTop + this.clientHeight >= this.scrollHeight - 200) {
+    appendMarketPage();
+  }
+});
+
 // ── Markets category filter ───────────────────────────────────────────────────
+const MKT_CATS = ['politics','geo','sports','crypto','finance','tech','culture','other'];
 function toggleMktExclude(cat) {
   if (mktExcluded.has(cat)) mktExcluded.delete(cat);
   else mktExcluded.add(cat);
-  ['geo','sports','other'].forEach(k => {
+  MKT_CATS.forEach(k => {
     document.getElementById('mkt-cat-' + k)?.classList.toggle('on', !mktExcluded.has(k));
   });
   renderMarkets();
@@ -514,7 +582,7 @@ function applyFlowFilter() {
 function setMktSort(col) {
   if (mktSort === col) { mktSortDir *= -1; }
   else { mktSort = col; mktSortDir = 1; }
-  ['title','vol','fill','latest'].forEach(c => {
+  ['title','vol','fill','profit','latest'].forEach(c => {
     const el = document.getElementById('sort-col-' + c);
     const arrow = document.getElementById('sort-arrow-' + c);
     if (!el) return;
