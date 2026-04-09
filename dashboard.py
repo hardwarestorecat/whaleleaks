@@ -83,8 +83,14 @@ async def stats():
            )""",
         (db.MIN_BET_USD,),
     ).fetchone()[0]
+    from polymarket.market_cache import get_markets
+    try:
+        markets = await get_markets()
+        markets_count = len(markets)
+    except Exception:
+        markets_count = _markets_count
     return {
-        "markets_monitored": _markets_count,
+        "markets_monitored": markets_count,
         "alerts_today": alert_count_today,
         "tracked_whales": tracked_whales,
         "server_time": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
@@ -133,6 +139,43 @@ async def address_detail(address: str):
     stats = db.get_address_stats(address)
     fills = db.get_address_fills(address)
     return {"stats": stats, "fills": fills}
+
+
+@app.get("/api/today")
+async def today_action():
+    """Biggest plays and hottest markets today."""
+    conn = db._conn()
+    # Biggest single whale play today (spend + profit filtered)
+    top_play = conn.execute(
+        """SELECT market_title, side, usd_value, quantity, price_cents, address
+           FROM fills
+           WHERE ts >= date('now')
+             AND usd_value >= ?
+             AND (quantity - usd_value) >= ?
+           ORDER BY usd_value DESC
+           LIMIT 1""",
+        (config.WHALE_THRESHOLD_USD, config.WHALE_MIN_PROFIT_USD),
+    ).fetchone()
+    # Top markets by total whale volume today
+    hot_markets = conn.execute(
+        """SELECT market_title,
+                  SUM(usd_value) AS total_volume,
+                  COUNT(*) AS trade_count,
+                  SUM(CASE WHEN side='yes' THEN usd_value ELSE 0 END) AS yes_volume,
+                  SUM(CASE WHEN side='no'  THEN usd_value ELSE 0 END) AS no_volume
+           FROM fills
+           WHERE ts >= date('now')
+             AND usd_value >= ?
+             AND (quantity - usd_value) >= ?
+           GROUP BY market_title
+           ORDER BY total_volume DESC
+           LIMIT 5""",
+        (config.WHALE_THRESHOLD_USD, config.WHALE_MIN_PROFIT_USD),
+    ).fetchall()
+    return {
+        "top_play": dict(top_play) if top_play else None,
+        "hot_markets": [dict(r) for r in hot_markets],
+    }
 
 
 @app.get("/api/flow")
