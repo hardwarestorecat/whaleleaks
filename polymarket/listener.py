@@ -171,8 +171,11 @@ async def _handle(trade: dict, on_whale: WhaleCB | None, on_flow: FlowCB | None)
             "is_culture": culture,
         })
 
-    # Whale alert — any trade >= threshold
+    # Whale alert — must exceed spend threshold AND minimum profit
     if usd_value < config.WHALE_THRESHOLD_USD:
+        return
+    potential_profit_pre = quantity - usd_value
+    if potential_profit_pre < config.WHALE_MIN_PROFIT_USD:
         return
 
     alert = WhaleAlert(

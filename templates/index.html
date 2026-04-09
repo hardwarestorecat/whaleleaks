@@ -120,9 +120,10 @@
 
   /* Markets tab */
   #view-markets { flex-direction: column; overflow: hidden; }
-  .market-toolbar { padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .market-toolbar { padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; gap: 10px; flex-shrink: 0; flex-wrap: wrap; }
   .market-toolbar input { background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 5px 10px; font-size: 12px; width: 220px; outline: none; }
   .market-toolbar input:focus { border-color: var(--blue); }
+  .mkt-filter-scroll { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .filter-btn { padding: 4px 10px; border-radius: 5px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 11px; cursor: pointer; }
   .filter-btn.on { background: rgba(88,166,255,.1); color: var(--blue); border-color: var(--blue); }
   .mkt-updated { margin-left: auto; font-size: 10px; color: var(--border); }
@@ -211,17 +212,28 @@
   /* ── Mobile responsive ── */
   @media (max-width: 640px) {
     /* Header */
-    header { padding: 8px 12px; gap: 6px; }
-    header h1 { font-size: 15px; }
+    header { padding: 7px 10px; gap: 6px; }
+    header h1 { font-size: 14px; }
     #status-text { display: none; }
+    .tab { padding: 5px 8px; font-size: 11px; }
 
     /* Stats bar: 3 per row, 2 rows */
     .stats-bar { flex-wrap: wrap; }
-    .stat { flex: 0 0 33.333%; }
-    .stat .val { font-size: 16px; }
+    .stat { flex: 0 0 33.333%; padding: 6px 4px; }
+    .stat .val { font-size: 15px; }
+    .stat .lbl { font-size: 9px; }
 
-    /* Tabs */
-    .tab { padding: 5px 10px; }
+    /* Feed filters: horizontal scroll, no wrap */
+    .feed-filters {
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      padding: 5px 8px;
+      gap: 4px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .feed-filters::-webkit-scrollbar { display: none; }
+    .feed-filter-btn { white-space: nowrap; flex-shrink: 0; padding: 3px 8px; font-size: 10px; }
 
     /* Live feed: show mobile panel sub-tabs, hide non-active panels */
     .mobile-panel-tabs { display: flex; }
@@ -230,13 +242,39 @@
     #view-live .panel.mobile-active { display: flex; flex: 1; min-height: 0; }
     .panel.narrow { flex: 1; }
 
-    /* Market toolbar: search full-width on first row, buttons on second */
-    .market-toolbar { flex-wrap: wrap; gap: 6px; padding: 8px 12px; }
+    /* Flow rows: tighter, hide profit column */
+    .flow-row { padding: 6px 10px; gap: 6px; }
+    .flow-profit { display: none; }
+    .flow-side { width: 44px; }
+    .flow-side-badge { width: 44px; font-size: 9px; }
+    .flow-right { min-width: 58px; }
+    .flow-market { font-size: 11px; }
+    .flow-meta { font-size: 9px; }
+
+    /* Alert items: compress grid, hide profit column */
+    .alert-item { grid-template-columns: 24px 1fr auto; gap: 6px; padding: 8px 10px; }
+    .alert-profit { display: none; }
+    .side-badge { width: 24px; height: 24px; font-size: 8px; border-radius: 4px; }
+    .alert-market { font-size: 11px; }
+    .alert-usd { font-size: 12px; }
+
+    /* Leaderboard rows */
+    .lb-row { padding: 7px 10px; gap: 6px; }
+    .lb-addr { font-size: 10px; }
+    .lb-stats { font-size: 9px; }
+    .lb-wr { font-size: 12px; }
+    .lb-pnl { font-size: 9px; }
+
+    /* Market toolbar: search full-width, filter buttons scroll */
+    .market-toolbar { flex-wrap: wrap; gap: 5px; padding: 7px 10px; }
     .market-toolbar input { width: 100%; flex: 1 1 100%; }
     .mkt-updated { display: none; }
-    #mkt-showing { font-size: 10px; }
+    #mkt-showing { font-size: 10px; white-space: nowrap; }
+    .mkt-filter-scroll { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; width: 100%; padding-bottom: 2px; }
+    .mkt-filter-scroll::-webkit-scrollbar { display: none; }
+    .filter-btn { white-space: nowrap; flex-shrink: 0; font-size: 10px; padding: 3px 8px; }
 
-    /* Market table: hide vol + fill columns to fit screen */
+    /* Market table: hide vol + fill + profit columns */
     .mkt-col-vol, .mkt-col-fill, .mkt-vol, .mkt-fill, .mkt-col-profit, .mkt-profit { display: none !important; }
     .mkt-title { white-space: normal; font-size: 11px; line-height: 1.3; }
     .mkt-header-row { padding: 5px 10px; gap: 8px; }
@@ -244,14 +282,21 @@
     .geo-badge, .geo-spacer { width: 26px; font-size: 8px; }
     .mkt-col-geo { width: 26px; }
 
-    /* Flow rows: tighter horizontal padding */
-    .flow-row { padding: 6px 10px; gap: 6px; }
-
-    /* Address modal: full width, horizontal scroll on fill table */
-    #addr-modal-box { width: 100%; max-height: 90vh; border-radius: 0; border-left: none; border-right: none; align-self: flex-end; }
+    /* Address modal: full-screen bottom sheet */
     #addr-modal { align-items: flex-end; }
-    #addr-modal-body { overflow-x: auto; }
-    .fill-row { min-width: 520px; }
+    #addr-modal-box { width: 100%; max-height: 90vh; border-radius: 12px 12px 0 0; border-left: none; border-right: none; border-bottom: none; }
+    #addr-modal-body { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .fill-row { min-width: 480px; font-size: 10px; padding: 6px 12px; gap: 6px; }
+    .fill-row.header { font-size: 9px; }
+    #addr-modal-title { font-size: 11px; }
+    #addr-modal-stats { font-size: 10px; }
+  }
+
+  /* Very small screens (< 380px) */
+  @media (max-width: 380px) {
+    .tab .badge { display: none; }
+    .stat { flex: 0 0 50%; }
+    .stat:last-child:nth-child(odd) { flex: 0 0 100%; }
   }
 </style>
 </head>
@@ -306,7 +351,7 @@
   </div>
   <div class="panel">
     <div class="panel-header">
-      <span>Whale Alerts ≥$3k <span class="badge" id="whale-count">0</span></span>
+      <span>Whale Alerts ≥$3k spend / +$1k profit <span class="badge" id="whale-count">0</span></span>
       <select class="sort-select" id="whale-sort" onchange="sortWhaleFeed()">
         <option value="latest">Latest</option>
         <option value="usd">Amount</option>
@@ -349,15 +394,17 @@
 <div class="view" id="view-markets">
   <div class="market-toolbar">
     <input type="text" id="mkt-search" placeholder="Search markets…" oninput="renderMarkets()">
-    <button class="filter-btn on" id="mkt-cat-politics" onclick="toggleMktExclude('politics')">Politics</button>
-    <button class="filter-btn on" id="mkt-cat-geo"      onclick="toggleMktExclude('geo')">Geo</button>
-    <button class="filter-btn on" id="mkt-cat-sports"   onclick="toggleMktExclude('sports')">Sports</button>
-    <button class="filter-btn on" id="mkt-cat-crypto"   onclick="toggleMktExclude('crypto')">Crypto</button>
-    <button class="filter-btn on" id="mkt-cat-finance"  onclick="toggleMktExclude('finance')">Finance</button>
-    <button class="filter-btn on" id="mkt-cat-tech"     onclick="toggleMktExclude('tech')">Tech</button>
-    <button class="filter-btn on" id="mkt-cat-culture"  onclick="toggleMktExclude('culture')">Culture</button>
-    <button class="filter-btn on" id="mkt-cat-other"    onclick="toggleMktExclude('other')">Other</button>
-    <span style="color:var(--muted);font-size:11px" id="mkt-showing"></span>
+    <div class="mkt-filter-scroll">
+      <button class="filter-btn on" id="mkt-cat-politics" onclick="toggleMktExclude('politics')">Politics</button>
+      <button class="filter-btn on" id="mkt-cat-geo"      onclick="toggleMktExclude('geo')">Geo</button>
+      <button class="filter-btn on" id="mkt-cat-sports"   onclick="toggleMktExclude('sports')">Sports</button>
+      <button class="filter-btn on" id="mkt-cat-crypto"   onclick="toggleMktExclude('crypto')">Crypto</button>
+      <button class="filter-btn on" id="mkt-cat-finance"  onclick="toggleMktExclude('finance')">Finance</button>
+      <button class="filter-btn on" id="mkt-cat-tech"     onclick="toggleMktExclude('tech')">Tech</button>
+      <button class="filter-btn on" id="mkt-cat-culture"  onclick="toggleMktExclude('culture')">Culture</button>
+      <button class="filter-btn on" id="mkt-cat-other"    onclick="toggleMktExclude('other')">Other</button>
+      <span style="color:var(--muted);font-size:11px" id="mkt-showing"></span>
+    </div>
     <span class="mkt-updated" id="mkt-updated"></span>
   </div>
   <div class="mkt-header-row">
@@ -616,6 +663,7 @@ function applyFlowFilter() {
   };
   document.querySelectorAll('#flow-feed .flow-row').forEach(check);
   document.querySelectorAll('#alert-feed .alert-item').forEach(check);
+  updateWhaleCount();
 }
 
 // ── Markets sort ──────────────────────────────────────────────────────────────
@@ -720,8 +768,7 @@ async function loadHistory() {
         seenTx.add(key);
         feed.appendChild(buildAlertEl(a, false));
       });
-      whaleCount = feed.querySelectorAll('.alert-item').length;
-      document.getElementById('whale-count').textContent = whaleCount;
+      updateWhaleCount();
     }
   } catch(e) {}
 }
@@ -835,15 +882,20 @@ function addFlowRow(d) {
 }
 
 // ── Whale alert ───────────────────────────────────────────────────────────────
+function updateWhaleCount() {
+  const n = document.querySelectorAll('#alert-feed .alert-item:not([style*="display: none"])').length;
+  document.getElementById('whale-count').textContent = n;
+  whaleCount = n;
+}
+
 function addWhaleAlert(a) {
   const feed = document.getElementById('alert-feed');
   feed.querySelector('.empty')?.remove();
   feed.prepend(buildAlertEl(a, true));
-  if (flowFilter !== 'all') applyFlowFilter();
-  whaleCount++;
-  document.getElementById('whale-count').textContent = whaleCount;
   const items = feed.querySelectorAll('.alert-item');
   if (items.length > 100) items[items.length-1].remove();
+  if (flowFilter !== 'all') applyFlowFilter();
+  updateWhaleCount();
   refreshWhales();
 }
 
