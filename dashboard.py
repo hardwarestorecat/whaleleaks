@@ -177,27 +177,42 @@ async def today_action():
            LIMIT 5""",
         (config.WHALE_THRESHOLD_USD, config.WHALE_MIN_PROFIT_USD),
     ).fetchall()
+    # Top addresses by total spend today (whale-sized trades only)
+    top_addrs = conn.execute(
+        """SELECT address, SUM(usd_value) AS total_usd, COUNT(*) AS trades
+           FROM fills
+           WHERE ts >= date('now') AND usd_value >= ?
+           GROUP BY address
+           ORDER BY total_usd DESC
+           LIMIT 10""",
+        (config.WHALE_THRESHOLD_USD,),
+    ).fetchall()
     return {
         "top_play": dict(top_play) if top_play else None,
         "hot_markets": [dict(r) for r in hot_markets],
+        "top_addresses": [dict(r) for r in top_addrs],
     }
 
 
 @app.get("/api/flow")
-def recent_flow(limit: int = 500):
+def recent_flow(limit: int = 500, offset: int = 0):
     from store import flow_store
-    return flow_store.get_recent_flow(limit)
+    items = flow_store.get_recent_flow(limit=limit + 1, offset=offset)
+    has_more = len(items) > limit
+    return {"items": items[:limit], "has_more": has_more}
 
 
 @app.get("/api/whale-history")
-def recent_whale_history(limit: int = 200):
+def recent_whale_history(limit: int = 200, offset: int = 0):
     from store import flow_store
-    all_whales = flow_store.get_recent_whales(limit * 3)  # fetch extra to account for filtering
-    return [
-        w for w in all_whales
+    # Fetch extra to account for profit-filter rejections, then paginate
+    raw = flow_store.get_recent_whales(limit=limit * 4, offset=offset)
+    filtered = [
+        w for w in raw
         if w.get("usd_value", 0) >= config.WHALE_THRESHOLD_USD
         and w.get("potential_profit", 0) >= config.WHALE_MIN_PROFIT_USD
-    ][:limit]
+    ]
+    return {"items": filtered[:limit], "has_more": len(filtered) > limit}
 
 
 @app.get("/api/stream")

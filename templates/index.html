@@ -27,10 +27,22 @@
   .tab.active { color: var(--blue); border-color: var(--blue); background: rgba(88,166,255,.08); }
   .tab .badge { background: var(--border); border-radius: 8px; padding: 0 5px; font-size: 10px; margin-left: 4px; }
 
-  .stats-bar { display: flex; gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); flex-shrink: 0; }
-  .stat { flex: 1; padding: 8px 12px; background: var(--surface); text-align: center; }
-  .stat .val { font-size: 18px; font-weight: 700; color: var(--blue); }
-  .stat .lbl { font-size: 10px; color: var(--muted); margin-top: 1px; text-transform: uppercase; letter-spacing: .4px; }
+  .action-bar { display: flex; border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0; align-items: stretch; overflow: hidden; min-height: 34px; }
+  .ab-group { display: flex; align-items: center; gap: 8px; padding: 5px 14px; flex: 1; min-width: 0; overflow: hidden; }
+  .ab-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+  .ab-sep { width: 1px; background: var(--border); flex-shrink: 0; align-self: stretch; }
+  .ab-chips { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; flex: 1; align-items: center; -webkit-overflow-scrolling: touch; }
+  .ab-chips::-webkit-scrollbar { display: none; }
+  .ab-chip { display: inline-flex; align-items: center; gap: 5px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; font-size: 10px; white-space: nowrap; flex-shrink: 0; }
+  .ab-chip.clickable { cursor: pointer; }
+  .ab-chip.clickable:hover { border-color: var(--blue); }
+  .ab-chip.clickable:hover .ab-chip-name { color: var(--blue); }
+  .ab-chip-name { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ab-chip-vol { color: var(--gold); font-weight: 700; }
+  .ab-chip-lean { font-size: 8px; font-weight: 800; flex-shrink: 0; }
+  .ab-chip-lean.yes { color: var(--yes); }
+  .ab-chip-lean.no { color: var(--no); }
+  .ab-placeholder { font-size: 10px; color: var(--border); }
 
   .view { flex: 1; min-height: 0; display: none; }
   .view.active { display: flex; }
@@ -158,18 +170,8 @@
   .geo-badge { font-size: 8px; background: rgba(88,166,255,.15); color: var(--blue); border-radius: 3px; padding: 1px 4px; font-weight: 700; flex-shrink: 0; min-width: 34px; text-align: center; }
   .geo-spacer { min-width: 34px; flex-shrink: 0; }
 
-  /* Today's action strip */
-  .today-strip { display: flex; gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); flex-shrink: 0; overflow: hidden; }
-  .today-card { flex: 1; background: var(--surface); padding: 8px 14px; min-width: 0; }
-  .today-card-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px; }
-  .today-card-main { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .today-card-sub { font-size: 10px; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .today-markets { flex: 2; display: flex; flex-direction: column; gap: 2px; }
-  .today-mkt-row { display: flex; align-items: center; gap: 6px; font-size: 10px; min-width: 0; }
-  .today-mkt-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
-  .today-mkt-vol { color: var(--gold); font-weight: 700; flex-shrink: 0; }
-  .today-mkt-bar { height: 3px; border-radius: 2px; flex-shrink: 0; width: 40px; background: var(--border); overflow: hidden; }
-  .today-mkt-bar-fill { height: 100%; border-radius: 2px; background: var(--gold); }
+  /* Load more sentinel */
+  .load-sentinel { display: flex; align-items: center; justify-content: center; padding: 16px; color: var(--muted); font-size: 11px; }
 
   /* Live feed filter bar */
   .feed-filters { display: flex; gap: 4px; padding: 6px 10px; border-bottom: 1px solid var(--border); background: var(--bg); flex-shrink: 0; }
@@ -193,6 +195,8 @@
   .sort-active .sort-arrow { opacity: 1; }
 
   .empty { text-align: center; color: var(--muted); padding: 30px; font-size: 12px; }
+  .pm-link { color: inherit; text-decoration: none; }
+  .pm-link:hover { text-decoration: underline; text-underline-offset: 2px; }
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
@@ -230,11 +234,10 @@
     #status-text { display: none; }
     .tab { padding: 5px 8px; font-size: 11px; }
 
-    /* Stats bar: 3 per row, 2 rows */
-    .stats-bar { flex-wrap: wrap; }
-    .stat { flex: 0 0 33.333%; padding: 6px 4px; }
-    .stat .val { font-size: 15px; }
-    .stat .lbl { font-size: 9px; }
+    /* Action bar: stack vertically on mobile */
+    .action-bar { flex-direction: column; min-height: auto; }
+    .ab-group { padding: 4px 10px; }
+    .ab-sep { width: auto; height: 1px; align-self: stretch; }
 
     /* Feed filters: horizontal scroll, no wrap */
     .feed-filters {
@@ -308,8 +311,6 @@
   /* Very small screens (< 380px) */
   @media (max-width: 380px) {
     .tab .badge { display: none; }
-    .stat { flex: 0 0 50%; }
-    .stat:last-child:nth-child(odd) { flex: 0 0 100%; }
   }
 </style>
 </head>
@@ -327,11 +328,16 @@
   </div>
 </header>
 
-<div class="stats-bar">
-  <div class="stat"><div class="val" id="s-markets">—</div><div class="lbl">Markets</div></div>
-  <div class="stat"><div class="val" id="s-flow">0</div><div class="lbl">Flow Today</div></div>
-  <div class="stat"><div class="val" id="s-alerts">0</div><div class="lbl">Whale Alerts Today</div></div>
-  <div class="stat"><div class="val" id="s-whales">—</div><div class="lbl">Tracked Whales</div></div>
+<div class="action-bar" id="action-bar">
+  <div class="ab-group">
+    <span class="ab-label">Hot Markets</span>
+    <div class="ab-chips" id="ab-markets"><span class="ab-placeholder">loading…</span></div>
+  </div>
+  <div class="ab-sep"></div>
+  <div class="ab-group">
+    <span class="ab-label">Big Players Today</span>
+    <div class="ab-chips" id="ab-players"><span class="ab-placeholder">loading…</span></div>
+  </div>
 </div>
 
 <!-- Live Feed Tab -->
@@ -345,17 +351,6 @@
     <button class="feed-filter-btn finance on"   id="ff-finance"  onclick="toggleFlowExclude('finance')">Finance</button>
     <button class="feed-filter-btn tech on"      id="ff-tech"     onclick="toggleFlowExclude('tech')">Tech</button>
     <button class="feed-filter-btn culture on"   id="ff-culture"  onclick="toggleFlowExclude('culture')">Culture</button>
-  </div>
-  <div class="today-strip" id="today-strip" style="display:none">
-    <div class="today-card" id="today-top-play">
-      <div class="today-card-label">Biggest Play Today</div>
-      <div class="today-card-main" id="today-play-title">—</div>
-      <div class="today-card-sub" id="today-play-sub"></div>
-    </div>
-    <div class="today-card today-markets" id="today-hot-markets">
-      <div class="today-card-label">Hottest Markets Today</div>
-      <div id="today-mkt-list"></div>
-    </div>
   </div>
   <div class="mobile-panel-tabs">
     <button class="mobile-panel-tab on" onclick="setMobilePanel(0)">Flow</button>
@@ -512,54 +507,36 @@ function setMobilePanel(idx) {
   });
 }
 
-// ── Stats ────────────────────────────────────────────────────────────────────
-async function refreshStats() {
-  try {
-    const d = await fetch('/api/stats').then(r => r.json());
-    document.getElementById('s-markets').textContent = d.markets_monitored;
-    document.getElementById('s-alerts').textContent  = d.alerts_today;
-    document.getElementById('s-whales').textContent  = d.tracked_whales;
-  } catch(e) {}
-}
-setInterval(refreshStats, 10000);
-refreshStats();
-
-// ── Today's action strip ─────────────────────────────────────────────────────
+// ── Action bar (hot markets + big players today) ──────────────────────────────
 async function refreshToday() {
   try {
     const d = await fetch('/api/today').then(r => r.json());
-    const strip = document.getElementById('today-strip');
-    if (!d.top_play && !d.hot_markets.length) return;
-    strip.style.display = 'flex';
-
-    if (d.top_play) {
-      const p = d.top_play;
-      const profit = p.quantity - p.usd_value;
-      const side = (p.side || '').toLowerCase();
-      const sideCls = side === 'yes' ? 'yes' : 'no';
-      document.getElementById('today-play-title').innerHTML =
-        `<span style="color:var(--${sideCls})">${side.toUpperCase()}</span> ${p.market_title}`;
-      document.getElementById('today-play-sub').textContent =
-        `${fmt.usd(p.usd_value)} spent · +${fmt.usd(profit)} potential`;
-    }
-
-    if (d.hot_markets.length) {
-      const maxVol = d.hot_markets[0].total_volume;
-      document.getElementById('today-mkt-list').innerHTML = d.hot_markets.map(m => {
-        const pct = Math.round((m.total_volume / maxVol) * 100);
+    if (d.hot_markets && d.hot_markets.length) {
+      document.getElementById('ab-markets').innerHTML = d.hot_markets.map(m => {
         const lean = m.yes_volume > m.no_volume ? 'YES' : 'NO';
         const leanCls = lean === 'YES' ? 'yes' : 'no';
-        return `<div class="today-mkt-row">
-          <div class="today-mkt-name" title="${m.market_title}">${m.market_title}</div>
-          <span style="color:var(--${leanCls});font-size:9px;font-weight:700;flex-shrink:0">${lean}</span>
-          <div class="today-mkt-vol">${fmt.usd(m.total_volume)}</div>
-          <div class="today-mkt-bar"><div class="today-mkt-bar-fill" style="width:${pct}%"></div></div>
+        return `<div class="ab-chip">
+          <span class="ab-chip-lean ${leanCls}">${lean}</span>
+          <span class="ab-chip-name" title="${m.market_title}">${m.market_title}</span>
+          <span class="ab-chip-vol">${fmt.usd(m.total_volume)}</span>
         </div>`;
       }).join('');
+    } else {
+      document.getElementById('ab-markets').innerHTML = '<span class="ab-placeholder">no trades yet today</span>';
+    }
+    if (d.top_addresses && d.top_addresses.length) {
+      document.getElementById('ab-players').innerHTML = d.top_addresses.map(a =>
+        `<div class="ab-chip clickable" onclick="openAddrModal('${a.address}')">
+          <span class="ab-chip-name addr">${fmt.addr(a.address)}</span>
+          <span class="ab-chip-vol">${fmt.usd(a.total_usd)}</span>
+        </div>`
+      ).join('');
+    } else {
+      document.getElementById('ab-players').innerHTML = '<span class="ab-placeholder">no trades yet today</span>';
     }
   } catch(e) {}
 }
-setInterval(refreshToday, 30000);
+setInterval(refreshToday, 60000);
 refreshToday();
 
 // ── Markets ──────────────────────────────────────────────────────────────────
@@ -567,7 +544,6 @@ async function fetchMarkets() {
   try {
     const data = await fetch('/api/markets').then(r => r.json());
     document.getElementById('market-tab-count').textContent = data.length;
-    document.getElementById('s-markets').textContent  = data.length;
     document.getElementById('mkt-updated').textContent = 'Updated ' + fmt.ts(new Date().toISOString());
 
     // Detect which markets have new top fills since last fetch
@@ -772,72 +748,152 @@ async function refreshWhales() {
 setInterval(refreshWhales, 10000);
 refreshWhales();
 
-// ── History load (from Redis) ─────────────────────────────────────────────────
+// ── History load + infinite scroll ───────────────────────────────────────────
+let flowOffset = 0, whaleOffset = 0;
+let flowHasMore = false, whaleHasMore = false;
+let flowLoading = false, whaleLoading = false;
+
+// Sentinel elements for IntersectionObserver
+const flowSentinel = (() => {
+  const d = document.createElement('div');
+  d.className = 'load-sentinel';
+  d.textContent = 'Loading more…';
+  return d;
+})();
+const whaleSentinel = (() => {
+  const d = document.createElement('div');
+  d.className = 'load-sentinel';
+  d.textContent = 'Loading more…';
+  return d;
+})();
+
+function polyUrl(marketId) {
+  if (!marketId || marketId.startsWith('0x')) return null;
+  return `https://polymarket.com/event/${marketId}`;
+}
+
+function buildFlowRowEl(row) {
+  if (row.usd_value < 500) return null;
+  const usdCls = row.is_whale ? 'whale' : row.usd_value >= 1500 ? 'big' : '';
+  const side = (row.side || '').toLowerCase();
+  const isBinary = side === 'yes' || side === 'no';
+  const sideCls  = isBinary ? side : 'outcome';
+  const sideLabel = isBinary ? side.toUpperCase() : (row.side || '?');
+  const rProfit = row.potential_profit != null ? fmt.usd(row.potential_profit) : null;
+  const rMult   = row.return_multiple  != null ? row.return_multiple.toFixed(2) + '×' : null;
+  const div = document.createElement('div');
+  div.className = 'flow-row' + (row.is_whale ? ' whale-hl' : '') + (row.is_geopolitical && !row.is_whale ? ' geo-hl' : '');
+  div.dataset.sortTs = new Date(row.ts).getTime();
+  div.dataset.sortUsd = row.usd_value;
+  div.dataset.sortProfit = row.potential_profit || 0;
+  tagRow(div, row);
+  const pmUrl = polyUrl(row.market_id);
+  const titleHtml = pmUrl
+    ? `<a class="pm-link" href="${pmUrl}" target="_blank" rel="noopener">${row.market_title}</a>`
+    : row.market_title;
+  div.innerHTML = `
+    <div class="flow-side">
+      <div class="flow-side-badge ${sideCls}" title="${row.side}">${sideLabel}</div>
+      <div class="flow-odds ${sideCls}">${row.price_cents}¢</div>
+    </div>
+    <div class="flow-body">
+      <div class="flow-market">${titleHtml}</div>
+      <div class="flow-meta">${fmt.addr(row.address)}</div>
+    </div>
+    ${row.is_whale ? '<span class="whale-tag">WHALE</span>' : ''}
+    ${row.is_geopolitical && !row.is_whale ? '<span class="geo-tag">GEO</span>' : ''}
+    ${rProfit ? `<div class="flow-profit"><div class="flow-profit-amount">+${fmt.vol(row.potential_profit)}</div><div class="flow-profit-mult">${rMult}</div></div>` : ''}
+    <div class="flow-right">
+      <div class="flow-usd ${usdCls}">${fmt.usd(row.usd_value)}</div>
+      <div class="flow-ts">${fmt.ts(row.ts)}</div>
+    </div>`;
+  return div;
+}
+
 async function loadHistory() {
   // Flow history
   try {
     const data = await fetch('/api/flow?limit=500').then(r => r.json());
-    if (data.length) {
+    if (data.items && data.items.length) {
       const feed = document.getElementById('flow-feed');
       feed.innerHTML = '';
-      // Already newest-first from Redis ZREVRANGE
-      data.forEach(row => {
-        if (row.usd_value < 500) return;
-        const usdCls = row.is_whale ? 'whale' : row.usd_value >= 1500 ? 'big' : '';
-        const side = (row.side || '').toLowerCase();
-        const isBinary = side === 'yes' || side === 'no';
-        const sideCls  = isBinary ? side : 'outcome';
-        const sideLabel = isBinary ? side.toUpperCase() : (row.side || '?');
-        const div = document.createElement('div');
-        const rProfit = row.potential_profit != null ? fmt.usd(row.potential_profit) : null;
-        const rMult   = row.return_multiple  != null ? row.return_multiple.toFixed(2) + '×' : null;
-        div.className = 'flow-row' + (row.is_whale ? ' whale-hl' : '') + (row.is_geopolitical && !row.is_whale ? ' geo-hl' : '');
-        div.dataset.sortTs = new Date(row.ts).getTime();
-        div.dataset.sortUsd = row.usd_value;
-        div.dataset.sortProfit = row.potential_profit || 0;
-        tagRow(div, row);
-        div.innerHTML = `
-          <div class="flow-side">
-            <div class="flow-side-badge ${sideCls}" title="${row.side}">${sideLabel}</div>
-            <div class="flow-odds ${sideCls}">${row.price_cents}¢</div>
-          </div>
-          <div class="flow-body">
-            <div class="flow-market">${row.market_title}</div>
-            <div class="flow-meta">${fmt.addr(row.address)}</div>
-          </div>
-          ${row.is_whale ? '<span class="whale-tag">WHALE</span>' : ''}
-          ${row.is_geopolitical && !row.is_whale ? '<span class="geo-tag">GEO</span>' : ''}
-          ${rProfit ? `<div class="flow-profit"><div class="flow-profit-amount">+${fmt.vol(row.potential_profit)}</div><div class="flow-profit-mult">${rMult}</div></div>` : ''}
-          <div class="flow-right">
-            <div class="flow-usd ${usdCls}">${fmt.usd(row.usd_value)}</div>
-            <div class="flow-ts">${fmt.ts(row.ts)}</div>
-          </div>`;
-        feed.appendChild(div);
-        flowCount++;
+      flowOffset = 0;
+      data.items.forEach(row => {
+        const el = buildFlowRowEl(row);
+        if (el) { feed.appendChild(el); flowCount++; }
       });
+      flowOffset = data.items.length;
+      flowHasMore = data.has_more;
       document.getElementById('flow-count').textContent = flowCount;
-      document.getElementById('s-flow').textContent = flowCount;
+      if (flowHasMore) feed.appendChild(flowSentinel);
     }
   } catch(e) {}
 
   // Whale alert history
   try {
     const data = await fetch('/api/whale-history?limit=200').then(r => r.json());
-    if (data.length) {
+    if (data.items && data.items.length) {
       const feed = document.getElementById('alert-feed');
       feed.innerHTML = '';
+      whaleOffset = 0;
       const seenTx = new Set();
-      data.forEach(a => {
+      data.items.forEach(a => {
         const key = a.tx_hash || (a.market_id + '|' + a.ts);
         if (seenTx.has(key)) return;
         seenTx.add(key);
         feed.appendChild(buildAlertEl(a, false));
       });
+      whaleOffset = data.items.length;
+      whaleHasMore = data.has_more;
       updateWhaleCount();
+      if (whaleHasMore) feed.appendChild(whaleSentinel);
     }
   } catch(e) {}
 }
 loadHistory();
+
+async function loadMoreFlow() {
+  if (flowLoading || !flowHasMore) return;
+  flowLoading = true;
+  try {
+    const data = await fetch(`/api/flow?limit=500&offset=${flowOffset}`).then(r => r.json());
+    const feed = document.getElementById('flow-feed');
+    data.items.forEach(row => {
+      const el = buildFlowRowEl(row);
+      if (el) { feed.insertBefore(el, flowSentinel); flowCount++; }
+    });
+    flowOffset += data.items.length;
+    flowHasMore = data.has_more;
+    document.getElementById('flow-count').textContent = flowCount;
+    if (!flowHasMore) flowSentinel.remove();
+  } catch(e) {}
+  flowLoading = false;
+}
+
+async function loadMoreWhales() {
+  if (whaleLoading || !whaleHasMore) return;
+  whaleLoading = true;
+  try {
+    const data = await fetch(`/api/whale-history?limit=200&offset=${whaleOffset}`).then(r => r.json());
+    const feed = document.getElementById('alert-feed');
+    data.items.forEach(a => feed.insertBefore(buildAlertEl(a, false), whaleSentinel));
+    whaleOffset += data.items.length;
+    whaleHasMore = data.has_more;
+    if (!whaleHasMore) whaleSentinel.remove();
+    updateWhaleCount();
+  } catch(e) {}
+  whaleLoading = false;
+}
+
+const _scrollObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    if (e.target === flowSentinel) loadMoreFlow();
+    if (e.target === whaleSentinel) loadMoreWhales();
+  });
+}, { rootMargin: '300px' });
+_scrollObs.observe(flowSentinel);
+_scrollObs.observe(whaleSentinel);
 
 // ── Address modal ────────────────────────────────────────────────────────────
 async function openAddrModal(address) {
@@ -904,44 +960,15 @@ connectSSE();
 
 // ── Flow row ─────────────────────────────────────────────────────────────────
 function addFlowRow(d) {
-  if (d.usd_value < 500) return;
+  const div = buildFlowRowEl(d);
+  if (!div) return;
   const feed = document.getElementById('flow-feed');
   feed.querySelector('.empty')?.remove();
-  const usdCls = d.is_whale ? 'whale' : d.usd_value >= 1500 ? 'big' : '';
-  const div = document.createElement('div');
-  const side = (d.side || '').toLowerCase();
-  const isBinary = side === 'yes' || side === 'no';
-  const sideCls  = isBinary ? side : 'outcome';
-  const sideLabel = isBinary ? side.toUpperCase() : (d.side || '?');
-  const oddsLabel = d.price_cents + '¢';
-  const profit = d.potential_profit != null ? fmt.usd(d.potential_profit) : null;
-  const mult   = d.return_multiple  != null ? d.return_multiple.toFixed(2) + '×' : null;
-  div.className = 'flow-row new' + (d.is_whale ? ' whale-hl' : '') + (d.is_geopolitical && !d.is_whale ? ' geo-hl' : '');
-  div.dataset.sortTs = new Date(d.ts).getTime();
-  div.dataset.sortUsd = d.usd_value;
-  div.dataset.sortProfit = d.potential_profit || 0;
-  tagRow(div, d);
-  div.innerHTML = `
-    <div class="flow-side">
-      <div class="flow-side-badge ${sideCls}" title="${d.side}">${sideLabel}</div>
-      <div class="flow-odds ${sideCls}">${oddsLabel}</div>
-    </div>
-    <div class="flow-body">
-      <div class="flow-market">${d.market_title}</div>
-      <div class="flow-meta">${fmt.addr(d.address)}</div>
-    </div>
-    ${d.is_whale ? '<span class="whale-tag">WHALE</span>' : ''}
-    ${d.is_geopolitical && !d.is_whale ? '<span class="geo-tag">GEO</span>' : ''}
-    ${profit ? `<div class="flow-profit"><div class="flow-profit-amount">+${fmt.vol(d.potential_profit)}</div><div class="flow-profit-mult">${mult}</div></div>` : ''}
-    <div class="flow-right">
-      <div class="flow-usd ${usdCls}">${fmt.usd(d.usd_value)}</div>
-      <div class="flow-ts">${fmt.ts(d.ts)}</div>
-    </div>`;
+  div.classList.add('new');
   feed.prepend(div);
   if (flowFilter !== 'all') applyFlowFilter();
   flowCount++;
   document.getElementById('flow-count').textContent = flowCount;
-  document.getElementById('s-flow').textContent = flowCount;
   const rows = feed.querySelectorAll('.flow-row');
   if (rows.length > 300) rows[rows.length-1].remove();
 }
@@ -985,7 +1012,7 @@ function buildAlertEl(a, isNew=false) {
   div.innerHTML = `
     <div class="side-badge ${side}">${side==='yes'?'YES':side==='no'?'NO':'?'}</div>
     <div>
-      <div class="alert-market">${a.market_title||a.market_id}</div>
+      <div class="alert-market">${(() => { const u = polyUrl(a.market_id); const t = a.market_title||a.market_id; return u ? `<a class="pm-link" href="${u}" target="_blank" rel="noopener">${t}</a>` : t; })()}</div>
       <div class="alert-meta">${a.price_cents}¢ / share</div>
       ${a.whale_address?`<div class="alert-whale">${fmt.addr(a.whale_address)}${pill}</div>`:''}
     </div>

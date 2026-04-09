@@ -16,7 +16,7 @@ log = logging.getLogger("polymarket.market_cache")
 
 _cache: list[dict] = []
 _last_refresh: float = 0
-_REFRESH_INTERVAL = 300
+_REFRESH_INTERVAL = 120
 
 
 async def get_markets() -> list[dict]:

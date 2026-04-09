@@ -23,7 +23,7 @@ WHALE_DATA_KEY   = "whaleleaks:whale_data"
 MARKET_HIGH_KEY  = "whaleleaks:market_high"
 GRAD_KEY         = "whaleleaks:graduates"   # ZSET: address → 30-day cumulative P&L
 GRAD_PNL_KEY     = "whaleleaks:grad_pnl"   # ZSET: "{address}:{ts}" → pnl (rolling window)
-TTL              = 14 * 24 * 3600   # 14 days in seconds (flow/whale retention window)
+TTL              = 30 * 24 * 3600   # 30 days in seconds (flow/whale retention window)
 WEEK             = 7  * 24 * 3600   # 7 days in seconds
 WHALE_GRAD_USD   = 10_000.0         # cumulative 30-day P&L to become a graduated whale
 
@@ -126,11 +126,11 @@ async def set_market_high(condition_id: str, fill: dict) -> None:
 
 # ── Sync reads (called from FastAPI/uvicorn thread) ───────────────────────────
 
-def get_recent_flow(limit: int = 500) -> list[dict]:
+def get_recent_flow(limit: int = 500, offset: int = 0) -> list[dict]:
     try:
         r = redis_sync.from_url(_url(), decode_responses=True, socket_connect_timeout=2)
         cutoff = time.time() - TTL
-        keys = r.zrevrangebyscore(FLOW_KEY, "+inf", cutoff, start=0, num=limit)
+        keys = r.zrevrangebyscore(FLOW_KEY, "+inf", cutoff, start=offset, num=limit)
         if not keys:
             return []
         values = r.hmget(FLOW_DATA_KEY, keys)
@@ -219,11 +219,11 @@ def get_graduated_whales() -> list[dict]:
         return []
 
 
-def get_recent_whales(limit: int = 200) -> list[dict]:
+def get_recent_whales(limit: int = 200, offset: int = 0) -> list[dict]:
     try:
         r = redis_sync.from_url(_url(), decode_responses=True, socket_connect_timeout=2)
         cutoff = time.time() - TTL
-        keys = r.zrevrangebyscore(WHALE_KEY, "+inf", cutoff, start=0, num=limit)
+        keys = r.zrevrangebyscore(WHALE_KEY, "+inf", cutoff, start=offset, num=limit)
         if not keys:
             return []
         values = r.hmget(WHALE_DATA_KEY, keys)
