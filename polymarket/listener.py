@@ -104,8 +104,16 @@ async def _handle(trade: dict, on_whale: WhaleCB | None, on_flow: FlowCB | None)
     ts_dt        = datetime.fromtimestamp(int(ts_raw), tz=timezone.utc)
     ts           = ts_dt.isoformat()
     quantity     = size
-    geo          = is_geopolitical(title)
-    sports       = is_sports(title)
+    # Look up cached market for API-sourced categories; fall back to keywords
+    from polymarket.market_cache import lookup_market
+    cached = lookup_market(condition_id)
+    geo      = cached["is_geopolitical"] if cached else is_geopolitical(title)
+    sports   = cached["is_sports"]       if cached else is_sports(title)
+    politics = cached.get("is_politics", False) if cached else False
+    crypto   = cached.get("is_crypto", False)   if cached else False
+    finance  = cached.get("is_finance", False)   if cached else False
+    tech     = cached.get("is_tech", False)      if cached else False
+    culture  = cached.get("is_culture", False)   if cached else False
 
     # ── Dedup: skip entirely if we've seen this tx before ────────────────────
     if usd_value >= config.FLOW_THRESHOLD_USD:
@@ -156,6 +164,11 @@ async def _handle(trade: dict, on_whale: WhaleCB | None, on_flow: FlowCB | None)
             "is_whale": usd_value >= config.WHALE_THRESHOLD_USD,
             "is_geopolitical": geo,
             "is_sports": sports,
+            "is_politics": politics,
+            "is_crypto": crypto,
+            "is_finance": finance,
+            "is_tech": tech,
+            "is_culture": culture,
         })
 
     # Whale alert — any trade >= threshold

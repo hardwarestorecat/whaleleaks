@@ -102,6 +102,14 @@ async def get_markets() -> list[dict]:
     return result
 
 
+def lookup_market(condition_id: str) -> dict | None:
+    """Fast lookup by condition_id from the in-memory cache."""
+    for m in _cache:
+        if m["condition_id"] == condition_id:
+            return m
+    return None
+
+
 # Backwards compat
 async def get_geopolitical_markets():
     markets = await get_markets()

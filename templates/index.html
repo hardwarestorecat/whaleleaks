@@ -159,6 +159,11 @@
   .feed-filter-btn.on.whale { color: var(--gold); border-color: var(--gold); background: rgba(227,179,65,.08); }
   .feed-filter-btn.on.geo   { color: var(--blue); border-color: var(--blue); background: rgba(88,166,255,.08); }
   .feed-filter-btn.on.sports { color: var(--purple); border-color: var(--purple); background: rgba(188,140,255,.08); }
+  .feed-filter-btn.on.politics { color: #bb80ff; border-color: #bb80ff; background: rgba(187,128,255,.08); }
+  .feed-filter-btn.on.crypto  { color: #ffa600; border-color: #ffa600; background: rgba(255,166,0,.08); }
+  .feed-filter-btn.on.finance { color: #d4a800; border-color: #d4a800; background: rgba(255,215,0,.08); }
+  .feed-filter-btn.on.tech    { color: #00c8c8; border-color: #00c8c8; background: rgba(0,200,200,.08); }
+  .feed-filter-btn.on.culture { color: #ff69b4; border-color: #ff69b4; background: rgba(255,105,180,.08); }
 
   /* Sortable market column headers */
   .mkt-col-sortable { cursor: pointer; user-select: none; }
@@ -267,9 +272,14 @@
 <!-- Live Feed Tab -->
 <div class="view" id="view-live" style="flex-direction:column">
   <div class="feed-filters">
-    <button class="feed-filter-btn geo on"    id="ff-geo"    onclick="toggleFlowExclude('geo')">GEO</button>
-    <button class="feed-filter-btn whale on"  id="ff-whale"  onclick="toggleFlowExclude('whale')">WHALE</button>
-    <button class="feed-filter-btn sports on" id="ff-sports" onclick="toggleFlowExclude('sports')">SPORTS</button>
+    <button class="feed-filter-btn whale on"    id="ff-whale"    onclick="toggleFlowExclude('whale')">WHALE</button>
+    <button class="feed-filter-btn geo on"      id="ff-geo"      onclick="toggleFlowExclude('geo')">GEO</button>
+    <button class="feed-filter-btn politics on"  id="ff-politics" onclick="toggleFlowExclude('politics')">POL</button>
+    <button class="feed-filter-btn sports on"    id="ff-sports"   onclick="toggleFlowExclude('sports')">SPORTS</button>
+    <button class="feed-filter-btn crypto on"    id="ff-crypto"   onclick="toggleFlowExclude('crypto')">CRYPTO</button>
+    <button class="feed-filter-btn finance on"   id="ff-finance"  onclick="toggleFlowExclude('finance')">FIN</button>
+    <button class="feed-filter-btn tech on"      id="ff-tech"     onclick="toggleFlowExclude('tech')">TECH</button>
+    <button class="feed-filter-btn culture on"   id="ff-culture"  onclick="toggleFlowExclude('culture')">CUL</button>
   </div>
   <div class="mobile-panel-tabs">
     <button class="mobile-panel-tab on" onclick="setMobilePanel(0)">Flow</button>
@@ -359,9 +369,14 @@ const _GEO_KW = ['war', 'conflict', 'battle', 'attack', 'invasion', 'ceasefire',
 function isSports(t) { t = (t||'').toLowerCase(); return _SPORTS_KW.some(k => t.includes(k)); }
 function isGeo(t)    { t = (t||'').toLowerCase(); return _GEO_KW.some(k => t.includes(k)); }
 function tagRow(el, d) {
-  el.dataset.whale  = d.is_whale                                    ? '1' : '0';
-  el.dataset.geo    = (d.is_geopolitical ?? isGeo(d.market_title))  ? '1' : '0';
-  el.dataset.sports = (d.is_sports       ?? isSports(d.market_title))? '1' : '0';
+  el.dataset.whale    = d.is_whale                                     ? '1' : '0';
+  el.dataset.geo      = (d.is_geopolitical ?? isGeo(d.market_title))   ? '1' : '0';
+  el.dataset.sports   = (d.is_sports       ?? isSports(d.market_title))? '1' : '0';
+  el.dataset.politics = d.is_politics ? '1' : '0';
+  el.dataset.crypto   = d.is_crypto   ? '1' : '0';
+  el.dataset.finance  = d.is_finance  ? '1' : '0';
+  el.dataset.tech     = d.is_tech     ? '1' : '0';
+  el.dataset.culture  = d.is_culture  ? '1' : '0';
 }
 
 let flowCount = 0, whaleCount = 0;
@@ -567,9 +582,14 @@ function toggleFlowExclude(cat) {
 function applyFlowFilter() {
   const check = el => {
     const cats = [];
-    if (el.dataset.geo    === '1') cats.push('geo');
-    if (el.dataset.sports === '1') cats.push('sports');
-    if (el.dataset.whale  === '1') cats.push('whale');
+    if (el.dataset.whale    === '1') cats.push('whale');
+    if (el.dataset.geo      === '1') cats.push('geo');
+    if (el.dataset.politics === '1') cats.push('politics');
+    if (el.dataset.sports   === '1') cats.push('sports');
+    if (el.dataset.crypto   === '1') cats.push('crypto');
+    if (el.dataset.finance  === '1') cats.push('finance');
+    if (el.dataset.tech     === '1') cats.push('tech');
+    if (el.dataset.culture  === '1') cats.push('culture');
     // items with no category tags always show; tagged items show if any tag is not excluded
     const show = cats.length === 0 || cats.some(c => !flowExcluded.has(c));
     el.style.display = show ? '' : 'none';
