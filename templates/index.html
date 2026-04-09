@@ -657,8 +657,8 @@ function applyFlowFilter() {
     if (el.dataset.finance  === '1') cats.push('finance');
     if (el.dataset.tech     === '1') cats.push('tech');
     if (el.dataset.culture  === '1') cats.push('culture');
-    // items with no category tags always show; tagged items show if any tag is not excluded
-    const show = cats.length === 0 || cats.some(c => !flowExcluded.has(c));
+    // items with no category tags always show; tagged items hide if ANY tag is excluded
+    const show = cats.length === 0 || !cats.some(c => flowExcluded.has(c));
     el.style.display = show ? '' : 'none';
   };
   document.querySelectorAll('#flow-feed .flow-row').forEach(check);
