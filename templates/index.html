@@ -312,12 +312,10 @@
 </header>
 
 <div class="stats-bar">
-  <div class="stat"><div class="val" id="s-markets">—</div><div class="lbl">Tracked</div></div>
-  <div class="stat"><div class="val" id="s-geo">—</div><div class="lbl">Geopolitical</div></div>
+  <div class="stat"><div class="val" id="s-markets">—</div><div class="lbl">Markets</div></div>
   <div class="stat"><div class="val" id="s-flow">0</div><div class="lbl">Flow Today</div></div>
-  <div class="stat"><div class="val" id="s-alerts">0</div><div class="lbl">Whale Alerts</div></div>
-  <div class="stat"><div class="val" id="s-addresses">—</div><div class="lbl">Addresses</div></div>
-  <div class="stat"><div class="val" id="s-uptime">—</div><div class="lbl">Uptime</div></div>
+  <div class="stat"><div class="val" id="s-alerts">0</div><div class="lbl">Whale Alerts Today</div></div>
+  <div class="stat"><div class="val" id="s-whales">—</div><div class="lbl">Tracked Whales</div></div>
 </div>
 
 <!-- Live Feed Tab -->
@@ -491,10 +489,9 @@ function setMobilePanel(idx) {
 async function refreshStats() {
   try {
     const d = await fetch('/api/stats').then(r => r.json());
-    document.getElementById('s-markets').textContent  = d.markets_monitored;
-    document.getElementById('s-alerts').textContent   = d.alerts_today;
-    document.getElementById('s-addresses').textContent = d.total_addresses;
-    document.getElementById('s-uptime').textContent   = d.uptime;
+    document.getElementById('s-markets').textContent = d.markets_monitored;
+    document.getElementById('s-alerts').textContent  = d.alerts_today;
+    document.getElementById('s-whales').textContent  = d.tracked_whales;
   } catch(e) {}
 }
 setInterval(refreshStats, 10000);
@@ -504,10 +501,8 @@ refreshStats();
 async function fetchMarkets() {
   try {
     const data = await fetch('/api/markets').then(r => r.json());
-    const geoCount = data.filter(m => m.is_geopolitical).length;
     document.getElementById('market-tab-count').textContent = data.length;
     document.getElementById('s-markets').textContent  = data.length;
-    document.getElementById('s-geo').textContent      = geoCount;
     document.getElementById('mkt-updated').textContent = 'Updated ' + fmt.ts(new Date().toISOString());
 
     // Detect which markets have new top fills since last fetch

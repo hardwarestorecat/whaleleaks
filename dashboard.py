@@ -63,19 +63,30 @@ async def index():
 @app.get("/api/stats")
 async def stats():
     conn = db._conn()
+    # Whale alerts today: must meet both spend AND profit thresholds
+    # profit = quantity - usd_value >= WHALE_MIN_PROFIT_USD
     alert_count_today = conn.execute(
-        "SELECT COUNT(*) FROM fills WHERE ts >= date('now') AND usd_value >= ?",
-        (config.WHALE_THRESHOLD_USD,),
+        """SELECT COUNT(*) FROM fills
+           WHERE ts >= date('now')
+             AND usd_value >= ?
+             AND (quantity - usd_value) >= ?""",
+        (config.WHALE_THRESHOLD_USD, config.WHALE_MIN_PROFIT_USD),
     ).fetchone()[0]
-    total_addresses = conn.execute("SELECT COUNT(*) FROM addresses").fetchone()[0]
-    uptime_s = int(time.time() - _start_time)
-    h, rem = divmod(uptime_s, 3600)
-    m, s = divmod(rem, 60)
+    # Addresses with at least $1k cumulative profit (leaderboard-eligible)
+    tracked_whales = conn.execute(
+        """SELECT COUNT(*) FROM (
+               SELECT address,
+                      SUM(CASE WHEN pnl_usd IS NOT NULL THEN pnl_usd ELSE 0 END) AS total_pnl
+               FROM fills WHERE usd_value >= ?
+               GROUP BY address
+               HAVING total_pnl >= 1000
+           )""",
+        (db.MIN_BET_USD,),
+    ).fetchone()[0]
     return {
-        "uptime": f"{h:02d}:{m:02d}:{s:02d}",
         "markets_monitored": _markets_count,
         "alerts_today": alert_count_today,
-        "total_addresses": total_addresses,
+        "tracked_whales": tracked_whales,
         "server_time": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
     }
 
