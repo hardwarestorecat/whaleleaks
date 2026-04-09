@@ -243,7 +243,7 @@ def get_address_stats(address: str) -> dict | None:
     return d
 
 
-def get_top_winners(limit: int = 25) -> list[dict]:
+def get_top_winners() -> list[dict]:
     rows = _conn().execute(
         """SELECT
                address,
@@ -255,16 +255,15 @@ def get_top_winners(limit: int = 25) -> list[dict]:
                NULLIF(SUM(CASE WHEN usd_value >= ? AND outcome NOT IN ('push','') AND outcome IS NOT NULL THEN 1 ELSE 0 END), 0) AS win_rate
            FROM fills
            GROUP BY address
-           HAVING resolved_fills >= 3
-           ORDER BY win_rate DESC, total_pnl_usd DESC
-           LIMIT ?""",
-        (MIN_BET_USD, MIN_BET_USD, MIN_BET_USD, MIN_BET_USD, MIN_BET_USD, limit),
+           HAVING resolved_fills >= 3 AND total_pnl_usd >= 1000
+           ORDER BY win_rate DESC, total_pnl_usd DESC""",
+        (MIN_BET_USD, MIN_BET_USD, MIN_BET_USD, MIN_BET_USD, MIN_BET_USD),
     ).fetchall()
     return [dict(r) for r in rows]
 
 
-def get_top_earners(limit: int = 25) -> list[dict]:
-    """Fallback leaderboard: all tracked addresses ranked by cumulative P&L."""
+def get_top_earners() -> list[dict]:
+    """Fallback leaderboard: all tracked addresses with ≥$1k total earnings."""
     rows = _conn().execute(
         """SELECT
                address,
@@ -276,10 +275,9 @@ def get_top_earners(limit: int = 25) -> list[dict]:
                NULLIF(SUM(CASE WHEN usd_value >= ? AND outcome NOT IN ('push','') AND outcome IS NOT NULL THEN 1 ELSE 0 END), 0) AS win_rate
            FROM fills
            GROUP BY address
-           HAVING total_fills >= 1
-           ORDER BY total_pnl_usd DESC
-           LIMIT ?""",
-        (MIN_BET_USD, MIN_BET_USD, MIN_BET_USD, MIN_BET_USD, MIN_BET_USD, limit),
+           HAVING total_pnl_usd >= 1000
+           ORDER BY total_pnl_usd DESC""",
+        (MIN_BET_USD, MIN_BET_USD, MIN_BET_USD, MIN_BET_USD, MIN_BET_USD),
     ).fetchall()
     return [dict(r) for r in rows]
 
