@@ -60,6 +60,11 @@ async def index():
     return HTMLResponse((Path(__file__).parent / "templates" / "index.html").read_text(encoding="utf-8"))
 
 
+@app.get("/methodology", response_class=HTMLResponse)
+async def methodology():
+    return HTMLResponse((Path(__file__).parent / "templates" / "methodology.html").read_text(encoding="utf-8"))
+
+
 @app.get("/api/stats")
 async def stats():
     conn = db._conn()

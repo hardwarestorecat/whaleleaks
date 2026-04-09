@@ -63,23 +63,35 @@ def init() -> None:
             condition_id  TEXT    NOT NULL,
             market_title  TEXT    NOT NULL,
             side          TEXT    NOT NULL,   -- "yes" | "no"
+            trade_side    TEXT    NOT NULL DEFAULT 'BUY',  -- "BUY" | "SELL"
             price_cents   INTEGER NOT NULL,
             quantity      REAL    NOT NULL,
             usd_value     REAL    NOT NULL,
             ts            TEXT    NOT NULL,
-            outcome       TEXT,               -- "win" | "loss" | "push" | NULL
+            outcome       TEXT,               -- "win" | "loss" | "push" | "realized" | NULL
             pnl_usd       REAL
         );
 
         CREATE INDEX IF NOT EXISTS idx_fills_address      ON fills(address);
         CREATE INDEX IF NOT EXISTS idx_fills_condition    ON fills(condition_id);
-        CREATE INDEX IF NOT EXISTS idx_fills_unresolved   ON fills(condition_id) WHERE outcome IS NULL;
+        CREATE INDEX IF NOT EXISTS idx_fills_unresolved   ON fills(condition_id) WHERE outcome IS NULL AND trade_side = 'BUY';
 
         CREATE TABLE IF NOT EXISTS market_outcomes (
             condition_id    TEXT PRIMARY KEY,
             winning_side    TEXT,             -- "yes" | "no" | "invalid" | NULL (unresolved)
             resolved_at     TEXT,
             checked_at      TEXT NOT NULL
+        );
+
+        -- Tracks open positions per address+market for exit P&L calculation
+        CREATE TABLE IF NOT EXISTS positions (
+            address      TEXT NOT NULL,
+            condition_id TEXT NOT NULL,
+            token_side   TEXT NOT NULL,   -- "yes" | "no"
+            quantity     REAL NOT NULL DEFAULT 0,
+            avg_cost     REAL NOT NULL DEFAULT 0,   -- avg cost per share (0-1 USDC)
+            total_cost   REAL NOT NULL DEFAULT 0,   -- total USDC paid
+            PRIMARY KEY (address, condition_id, token_side)
         );
         """)
 
@@ -105,6 +117,93 @@ def init() -> None:
         )
         conn.commit()
 
+    # Migrate: add trade_side column if missing
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(fills)").fetchall()}
+    if "trade_side" not in cols:
+        conn.execute("ALTER TABLE fills ADD COLUMN trade_side TEXT NOT NULL DEFAULT 'BUY'")
+        conn.commit()
+
+
+# ─── Position tracking ────────────────────────────────────────────────────────
+
+def upsert_position(address: str, condition_id: str, token_side: str,
+                    quantity: float, usd_value: float) -> None:
+    """Record a BUY — update average cost basis for the position."""
+    with tx() as conn:
+        existing = conn.execute(
+            "SELECT quantity, total_cost FROM positions WHERE address=? AND condition_id=? AND token_side=?",
+            (address, condition_id, token_side),
+        ).fetchone()
+        if existing:
+            new_qty  = existing["quantity"] + quantity
+            new_cost = existing["total_cost"] + usd_value
+            conn.execute(
+                """UPDATE positions SET quantity=?, avg_cost=?, total_cost=?
+                   WHERE address=? AND condition_id=? AND token_side=?""",
+                (new_qty, new_cost / new_qty if new_qty else 0, new_cost,
+                 address, condition_id, token_side),
+            )
+        else:
+            conn.execute(
+                """INSERT INTO positions (address, condition_id, token_side, quantity, avg_cost, total_cost)
+                   VALUES (?,?,?,?,?,?)""",
+                (address, condition_id, token_side, quantity,
+                 usd_value / quantity if quantity else 0, usd_value),
+            )
+
+
+def realize_sell(address: str, condition_id: str, token_side: str,
+                 quantity: float, sell_price: float) -> tuple[float, float] | None:
+    """
+    Calculate realized P&L for a SELL and reduce the open position.
+    Returns (realized_pnl, cost_basis) or None if no position on record.
+    sell_price is in USDC per share (0.0–1.0).
+    """
+    conn = _conn()
+    pos = conn.execute(
+        "SELECT quantity, avg_cost, total_cost FROM positions WHERE address=? AND condition_id=? AND token_side=?",
+        (address, condition_id, token_side),
+    ).fetchone()
+    if not pos or pos["quantity"] <= 0:
+        return None
+
+    sell_qty      = min(quantity, pos["quantity"])  # can't sell more than held
+    cost_basis    = pos["avg_cost"] * sell_qty
+    sell_proceeds = sell_price * sell_qty
+    realized_pnl  = sell_proceeds - cost_basis
+
+    with tx() as conn:
+        new_qty = pos["quantity"] - sell_qty
+        if new_qty <= 0.001:
+            conn.execute(
+                "DELETE FROM positions WHERE address=? AND condition_id=? AND token_side=?",
+                (address, condition_id, token_side),
+            )
+        else:
+            conn.execute(
+                """UPDATE positions SET quantity=?, total_cost=?
+                   WHERE address=? AND condition_id=? AND token_side=?""",
+                (new_qty, pos["avg_cost"] * new_qty, address, condition_id, token_side),
+            )
+
+    return realized_pnl, cost_basis
+
+
+def credit_realized_pnl(address: str, pnl: float, ts: str) -> None:
+    """Update address stats for a realized exit (win or loss)."""
+    with tx() as conn:
+        conn.execute(
+            """INSERT INTO addresses (address, total_fills, resolved_fills, wins, total_pnl_usd, first_seen, last_seen)
+               VALUES (?, 0, 1, ?, ?, ?, ?)
+               ON CONFLICT(address) DO UPDATE SET
+                 resolved_fills = resolved_fills + 1,
+                 wins           = wins + ?,
+                 total_pnl_usd  = total_pnl_usd + ?,
+                 last_seen      = excluded.last_seen""",
+            (address, 1 if pnl > 0 else 0, pnl, ts, ts,
+             1 if pnl > 0 else 0, pnl),
+        )
+
 
 # ─── Fill writes ─────────────────────────────────────────────────────────────
 
@@ -117,19 +216,22 @@ def save_fill(
     condition_id: str,
     market_title: str,
     side: str,
+    trade_side: str = "BUY",
     price_cents: int,
     quantity: float,
     usd_value: float,
     ts: str,
+    outcome: str | None = None,
+    pnl_usd: float | None = None,
 ) -> int:
     with tx() as conn:
         cur = conn.execute(
             """INSERT OR IGNORE INTO fills
                (tx_hash, block_number, address, role, condition_id, market_title,
-                side, price_cents, quantity, usd_value, ts)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                side, trade_side, price_cents, quantity, usd_value, ts, outcome, pnl_usd)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (tx_hash, block_number, address, role, condition_id, market_title,
-             side, price_cents, quantity, usd_value, ts),
+             side, trade_side, price_cents, quantity, usd_value, ts, outcome, pnl_usd),
         )
         if cur.rowcount == 0:
             return 0  # duplicate — nothing inserted
@@ -150,8 +252,9 @@ def save_fill(
 
 def get_unresolved_condition_ids() -> list[str]:
     conn = _conn()
+    # Only check condition_ids that have open BUY fills (SELLs are resolved immediately)
     rows = conn.execute(
-        "SELECT DISTINCT condition_id FROM fills WHERE outcome IS NULL"
+        "SELECT DISTINCT condition_id FROM fills WHERE outcome IS NULL AND trade_side = 'BUY'"
     ).fetchall()
     return [r["condition_id"] for r in rows]
 
@@ -175,17 +278,31 @@ def get_cached_outcome(condition_id: str) -> dict | None:
     return dict(row) if row else None
 
 
-def apply_outcome(condition_id: str, winning_side: str, resolved_at: str) -> None:
-    """Mark all fills for a condition as win/loss and update address stats."""
+def has_position(address: str, condition_id: str, token_side: str) -> bool:
+    """Return True if we have an open position for this address+market+side."""
+    row = _conn().execute(
+        "SELECT 1 FROM positions WHERE address=? AND condition_id=? AND token_side=? AND quantity > 0",
+        (address, condition_id, token_side),
+    ).fetchone()
+    return row is not None
+
+
+def apply_outcome(condition_id: str, winning_side: str, resolved_at: str) -> list[dict]:
+    """
+    Mark all open BUY fills for a condition as win/loss, update address stats.
+    Returns list of {address, pnl} for each winning fill so the caller can
+    update the Redis graduation scores.
+    """
     conn = _conn()
     fills = conn.execute(
-        "SELECT * FROM fills WHERE condition_id = ? AND outcome IS NULL",
+        "SELECT * FROM fills WHERE condition_id = ? AND outcome IS NULL AND trade_side = 'BUY'",
         (condition_id,),
     ).fetchall()
 
     if not fills:
-        return
+        return []
 
+    wins_to_record = []
     with tx() as conn:
         conn.execute(
             "UPDATE market_outcomes SET winning_side=?, resolved_at=? WHERE condition_id=?",
@@ -194,15 +311,12 @@ def apply_outcome(condition_id: str, winning_side: str, resolved_at: str) -> Non
         for f in fills:
             if winning_side == "invalid":
                 outcome = "push"
-                # Return cost basis
                 pnl = 0.0
             elif f["side"] == winning_side:
                 outcome = "win"
-                # Profit = (1.00 - price) × qty
                 pnl = (1.0 - f["price_cents"] / 100) * f["quantity"]
             else:
                 outcome = "loss"
-                # Loss = cost paid = price × qty
                 pnl = -(f["price_cents"] / 100) * f["quantity"]
 
             conn.execute(
@@ -217,6 +331,9 @@ def apply_outcome(condition_id: str, winning_side: str, resolved_at: str) -> Non
                    WHERE address = ?""",
                 (1 if outcome == "win" else 0, pnl, f["address"]),
             )
+            if outcome == "win" and pnl > 0:
+                wins_to_record.append({"address": f["address"], "pnl": pnl})
+    return wins_to_record
 
 
 # ─── Win-rate lookup ──────────────────────────────────────────────────────────

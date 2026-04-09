@@ -21,8 +21,11 @@ FLOW_DATA_KEY    = "whaleleaks:flow_data"   # HASH: fingerprint → json
 WHALE_KEY        = "whaleleaks:whales"
 WHALE_DATA_KEY   = "whaleleaks:whale_data"
 MARKET_HIGH_KEY  = "whaleleaks:market_high"
+GRAD_KEY         = "whaleleaks:graduates"   # ZSET: address → 30-day cumulative P&L
+GRAD_PNL_KEY     = "whaleleaks:grad_pnl"   # ZSET: "{address}:{ts}" → pnl (rolling window)
 TTL              = 30 * 24 * 3600   # 30 days in seconds
 WEEK             = 7  * 24 * 3600   # 7 days in seconds
+WHALE_GRAD_USD   = 10_000.0         # cumulative 30-day P&L to become a graduated whale
 
 
 def _flow_key(d: dict) -> str:
@@ -153,6 +156,66 @@ def get_all_market_highs() -> dict[str, dict]:
     except Exception as exc:
         log.debug("Redis market highs fetch: %s", exc)
         return {}
+
+
+async def record_pnl(address: str, pnl: float) -> bool:
+    """
+    Add a realized P&L event to the rolling 30-day window for an address.
+    Returns True if the address crosses the graduation threshold ($10k).
+    """
+    if not address or pnl <= 0:
+        return False
+    try:
+        r = aioredis.from_url(_url(), decode_responses=True)
+        now = time.time()
+        cutoff = now - TTL
+        member = f"{address}:{now}"
+        async with r:
+            # Add this P&L event (score = pnl, sorted by timestamp in member)
+            await r.zadd(GRAD_PNL_KEY, {member: pnl})
+            # Trim entries older than 30 days by removing members whose timestamp is old
+            # We store ts in the member string so use a Lua scan instead — simpler: store ts as score
+            # Restructure: use a per-address sorted set with score=ts, value=pnl serialized
+            addr_key = f"whaleleaks:addr_pnl:{address}"
+            await r.zadd(addr_key, {str(pnl): now})
+            await r.expire(addr_key, TTL)
+            # Remove events older than 30 days
+            await r.zremrangebyscore(addr_key, 0, cutoff)
+            # Sum remaining P&L values (stored as member strings)
+            entries = await r.zrange(addr_key, 0, -1)
+            total_30d = sum(float(e) for e in entries)
+            # Update the graduates leaderboard
+            await r.zadd(GRAD_KEY, {address: total_30d})
+            await r.expire(GRAD_KEY, TTL)
+            return total_30d >= WHALE_GRAD_USD
+    except Exception as exc:
+        log.debug("Redis record_pnl: %s", exc)
+        return False
+
+
+async def is_graduated_whale(address: str) -> bool:
+    """Return True if this address has >$10k cumulative P&L in the last 30 days."""
+    if not address:
+        return False
+    try:
+        r = aioredis.from_url(_url(), decode_responses=True)
+        async with r:
+            score = await r.zscore(GRAD_KEY, address)
+            return score is not None and float(score) >= WHALE_GRAD_USD
+    except Exception as exc:
+        log.debug("Redis is_graduated_whale: %s", exc)
+        return False
+
+
+def get_graduated_whales() -> list[dict]:
+    """Return all graduated whales sorted by 30-day P&L, for the leaderboard."""
+    try:
+        r = redis_sync.from_url(_url(), decode_responses=True, socket_connect_timeout=2)
+        entries = r.zrevrangebyscore(GRAD_KEY, "+inf", WHALE_GRAD_USD, withscores=True)
+        return [{"address": addr, "pnl_30d": score} for addr, score in entries]
+    except Exception as exc:
+        log.debug("Redis graduated whales fetch: %s", exc)
+        return []
 
 
 def get_recent_whales(limit: int = 200) -> list[dict]:

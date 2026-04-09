@@ -93,8 +93,19 @@ async def _check_one(session: aiohttp.ClientSession, condition_id: str, now: str
     db.cache_outcome(condition_id, winning_side, now)
 
     if winning_side:
-        db.apply_outcome(condition_id, winning_side, now)
-        log.info("Resolved %s → %s", condition_id[:16], winning_side)
+        wins = db.apply_outcome(condition_id, winning_side, now)
+        log.info("Resolved %s → %s (%d wins)", condition_id[:16], winning_side, len(wins))
+        # Feed wins into the Redis graduation system
+        if wins:
+            from store import flow_store
+            import asyncio
+            for w in wins:
+                try:
+                    asyncio.get_event_loop().create_task(
+                        flow_store.record_pnl(w["address"], w["pnl"])
+                    )
+                except Exception:
+                    pass
 
 
 def _determine_winner(market: dict) -> str | None:

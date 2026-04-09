@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>whaleleaks — methodology</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d1117; --surface: #161b22; --border: #30363d;
+    --text: #e6edf3; --muted: #8b949e;
+    --yes: #3fb950; --no: #f85149; --gold: #e3b341;
+    --blue: #58a6ff; --purple: #bc8cff;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.6; }
+  header { display: flex; align-items: center; gap: 16px; padding: 12px 24px; border-bottom: 1px solid var(--border); background: var(--surface); }
+  header h1 { font-size: 17px; font-weight: 700; }
+  header h1 span { color: var(--blue); }
+  header a { color: var(--muted); font-size: 12px; text-decoration: none; margin-left: auto; }
+  header a:hover { color: var(--text); }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 24px 64px; }
+  h2 { font-size: 20px; font-weight: 700; color: var(--blue); margin: 32px 0 12px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  h2:first-child { margin-top: 0; }
+  h3 { font-size: 14px; font-weight: 700; color: var(--gold); margin: 20px 0 6px; }
+  p { color: var(--muted); margin-bottom: 10px; }
+  ul, ol { color: var(--muted); padding-left: 20px; margin-bottom: 10px; }
+  li { margin-bottom: 4px; }
+  code { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-family: monospace; font-size: 12px; color: var(--purple); }
+  .rule-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin: 12px 0; }
+  .rule-box .label { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 6px; }
+  .rule-box .value { font-size: 18px; font-weight: 700; color: var(--text); }
+  .rule-box .desc { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .rules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+  .tag { display: inline-block; font-size: 10px; font-weight: 700; border-radius: 4px; padding: 2px 7px; margin: 2px; }
+  .tag.yes { background: rgba(63,185,80,.15); color: var(--yes); }
+  .tag.gold { background: rgba(227,179,65,.15); color: var(--gold); }
+  .tag.blue { background: rgba(88,166,255,.12); color: var(--blue); }
+  .tag.purple { background: rgba(188,140,255,.12); color: var(--purple); }
+  .tag.red { background: rgba(248,81,73,.12); color: var(--no); }
+  .updated { font-size: 11px; color: var(--border); margin-top: 48px; border-top: 1px solid var(--border); padding-top: 12px; }
+  @media (max-width: 600px) {
+    .rules-grid { grid-template-columns: 1fr; }
+    main { padding: 20px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>whale<span>leaks</span></h1>
+  <span style="color:var(--muted);font-size:12px">/ methodology</span>
+  <a href="/">← back to dashboard</a>
+</header>
+<main>
+
+  <h2>What is whaleleaks?</h2>
+  <p>whaleleaks monitors real-money prediction markets (Polymarket) in real time and surfaces addresses that consistently place large, high-upside bets that resolve in their favor. The goal is to identify wallets that appear to have informational advantages — insider knowledge, superior research, or political access — and track their moves as they happen.</p>
+
+  <h2>Whale Alert Criteria</h2>
+  <p>A trade must meet <strong>both</strong> of the following thresholds to appear as a Whale Alert:</p>
+  <div class="rules-grid">
+    <div class="rule-box">
+      <div class="label">Minimum Spend</div>
+      <div class="value">≥ $3,000</div>
+      <div class="desc">USD value placed on a single trade (size × price)</div>
+    </div>
+    <div class="rule-box">
+      <div class="label">Minimum Potential Profit</div>
+      <div class="value">≥ $1,000</div>
+      <div class="desc">Net gain if the bet resolves correctly (payout − cost)</div>
+    </div>
+  </div>
+  <p>This filters out large bets on near-certain outcomes (e.g. $20k on a 98¢ favourite) where the upside is trivial. We only care about bets where someone is risking real money on a meaningful opinion.</p>
+
+  <h2>Early Exits (Realized P&L)</h2>
+  <p>Prediction markets allow traders to sell their position before a market resolves. When an address sells shares at a higher price than they paid, we capture this as a <strong>realized win</strong> — no need to wait for market resolution.</p>
+  <ul>
+    <li>We track average cost basis per address per market token</li>
+    <li>On a SELL: realized P&L = (sell price − avg buy price) × quantity sold</li>
+    <li>Wins are credited immediately, not at resolution time</li>
+    <li>Early exits meeting whale criteria also generate a Whale Alert tagged <span class="tag gold">EXIT</span></li>
+  </ul>
+
+  <h2>Graduated Whales</h2>
+  <p>An address that accumulates <strong>≥ $10,000 in total realized gains over 30 days</strong> becomes a <em>Graduated Whale</em>. Graduated whales receive enhanced tracking regardless of per-trade size:</p>
+  <ul>
+    <li>Every trade from a graduated whale is saved to the long-term database</li>
+    <li>Smaller trades that don't meet the $3k / $1k thresholds are still recorded and visible</li>
+    <li>Graduation status rolls on a 30-day window — it can be lost if recent P&L drops below the threshold</li>
+  </ul>
+
+  <h2>Win Rate &amp; Leaderboard</h2>
+  <p>The <strong>Top Whales</strong> leaderboard ranks tracked addresses by two methods:</p>
+  <h3>Primary — By Win Rate</h3>
+  <p>Addresses with at least 3 resolved bets and ≥ $1k cumulative P&L, ranked by win rate (wins ÷ resolved bets), then by total P&L as a tiebreaker.</p>
+  <h3>Fallback — By Total Earned</h3>
+  <p>If fewer than one address qualifies for the win-rate board (not enough resolved bets yet), the leaderboard falls back to all addresses with ≥ $1k total P&L, ranked by cumulative earnings.</p>
+
+  <h3>What counts as a "win"?</h3>
+  <ul>
+    <li><span class="tag yes">RESOLVED WIN</span> Market resolves in the direction they bet</li>
+    <li><span class="tag blue">EARLY EXIT</span> Address sells their position at a profit before resolution</li>
+  </ul>
+  <h3>What does NOT count?</h3>
+  <ul>
+    <li><span class="tag red">PUSH</span> Markets declared invalid — cost basis returned, no win/loss recorded</li>
+    <li>Bets below <code>$500</code> are excluded from win-rate calculations</li>
+    <li>Sports markets are tracked in the flow feed but excluded from whale alerts</li>
+  </ul>
+
+  <h2>Data Sources</h2>
+  <ul>
+    <li><strong>Polymarket</strong> — <code>data-api.polymarket.com/trades</code> polled every 3 seconds</li>
+    <li><strong>Market resolution</strong> — <code>gamma-api.polymarket.com</code> polled hourly</li>
+    <li>No authentication required. All on-chain data is public.</li>
+  </ul>
+
+  <h2>What This Is Not</h2>
+  <ul>
+    <li>Not financial advice</li>
+    <li>Past win rates do not guarantee future performance</li>
+    <li>Addresses with high win rates may be market makers, arbitrageurs, or simply lucky — not necessarily insiders</li>
+    <li>We do not know the identity of any address</li>
+  </ul>
+
+  <p class="updated">Last updated April 2026. Methodology subject to change as we learn more.</p>
+</main>
+</body>
+</html>

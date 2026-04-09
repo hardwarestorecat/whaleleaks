@@ -321,7 +321,10 @@
     <div class="tab" id="tab-live"    onclick="switchTab('live')">Whale Moves</div>
     <div class="tab" id="tab-markets" onclick="switchTab('markets')">Live Feed <span class="badge" id="market-tab-count">—</span></div>
   </div>
-  <div><span id="status-dot"></span><span id="status-text">connecting…</span></div>
+  <div style="display:flex;align-items:center;gap:12px;flex-shrink:0">
+    <span><span id="status-dot"></span><span id="status-text">connecting…</span></span>
+    <a href="/methodology" style="font-size:11px;color:var(--muted);text-decoration:none" title="How it works">methodology</a>
+  </div>
 </header>
 
 <div class="stats-bar">
