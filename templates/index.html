@@ -194,12 +194,12 @@
   .load-sentinel { display: flex; align-items: center; justify-content: center; padding: 16px; color: var(--muted); font-size: 11px; }
 
   /* Live feed filter bar */
-  /* Top bar: filters left, whales right */
-  .top-bar { display: flex; border-bottom: 1px solid var(--border); background: var(--bg); flex-shrink: 0; min-height: 0; }
-  .top-bar-left { flex: 1; padding: 6px 10px; display: flex; align-items: flex-start; }
-  .top-bar-right { flex: 1; border-left: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  /* Top bar: tags 20%, leaderboard 40%, whales 40% */
+  .top-bar { display: flex; border-bottom: 1px solid var(--border); background: var(--bg); flex-shrink: 0; min-height: 0; max-height: 130px; }
+  .top-bar-tags { flex: 0 0 20%; padding: 6px 10px; display: flex; align-items: flex-start; overflow: hidden; }
+  .top-bar-section { flex: 0 0 40%; border-left: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
   .top-bar-label { padding: 4px 10px 2px; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; font-weight: 700; flex-shrink: 0; }
-  .top-bar-whales { overflow-y: auto; flex: 1; max-height: 120px; }
+  .top-bar-scroll { overflow-y: auto; flex: 1; }
   .feed-filters { display: flex; flex-wrap: wrap; gap: 4px; flex-shrink: 0; }
   .feed-filter-btn { padding: 3px 9px; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 10px; cursor: pointer; font-weight: 600; letter-spacing: .3px; }
   .feed-filter-btn:hover { color: var(--text); }
@@ -265,10 +265,10 @@
     .ab-group { padding: 4px 10px; }
     .ab-sep { width: auto; height: 1px; align-self: stretch; }
 
-    /* Top bar: stack on mobile, hide whale sidebar */
-    .top-bar { flex-direction: column; }
-    .top-bar-right { display: none; }
-    .top-bar-left { padding: 5px 8px; }
+    /* Top bar: stack on mobile, hide leaderboard + whale sidebar */
+    .top-bar { flex-direction: column; max-height: none; }
+    .top-bar-section { display: none; }
+    .top-bar-tags { flex: 1; padding: 5px 8px; }
 
     /* Feed filters: horizontal scroll, no wrap on mobile */
     .feed-filters {
@@ -391,7 +391,7 @@
 <!-- Live Feed Tab -->
 <div class="view" id="view-live" style="flex-direction:column">
   <div class="top-bar">
-    <div class="top-bar-left">
+    <div class="top-bar-tags">
       <div class="feed-filters">
         <button class="feed-filter-btn whale on"    id="ff-whale"    onclick="toggleFlowExclude('whale')">Whale</button>
         <button class="feed-filter-btn geo on"      id="ff-geo"      onclick="toggleFlowExclude('geo')">Geopolitics</button>
@@ -403,9 +403,13 @@
         <button class="feed-filter-btn culture on"   id="ff-culture"  onclick="toggleFlowExclude('culture')">Culture</button>
       </div>
     </div>
-    <div class="top-bar-right">
+    <div class="top-bar-section">
+      <div class="top-bar-label">Leaderboard <span class="badge" id="ldr-count">0</span> <span id="ldr-mode" style="font-size:9px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0"></span></div>
+      <div class="top-bar-scroll" id="leaderboard-list"><span class="ab-placeholder">loading…</span></div>
+    </div>
+    <div class="top-bar-section">
       <div class="top-bar-label">Top Whales <span class="badge" id="lb-count">0</span> <span id="lb-mode" style="font-size:9px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0"></span></div>
-      <div class="top-bar-whales" id="whale-list"><span class="ab-placeholder">loading…</span></div>
+      <div class="top-bar-scroll" id="whale-list"><span class="ab-placeholder">loading…</span></div>
     </div>
   </div>
   <div class="mobile-panel-tabs">
@@ -426,10 +430,10 @@
     <div class="col-headers flow-cols">
       <span class="ch-side">Side</span>
       <span class="ch-market">Market</span>
-      <span class="ch-spent">Spent</span>
+      <span class="ch-time">Time / Address</span>
       <span class="ch-mult">Mult</span>
       <span class="ch-profit">Winnings</span>
-      <span class="ch-time">Time / Address</span>
+      <span class="ch-spent">Spent</span>
     </div>
     <div class="panel-body" id="flow-feed"><div class="empty">Waiting for orders…</div></div>
   </div>
@@ -445,10 +449,10 @@
     <div class="col-headers alert-cols">
       <span class="ch-side">Side</span>
       <span class="ch-market">Market</span>
-      <span class="ch-spent">Spent</span>
+      <span class="ch-time">Time / Address</span>
       <span class="ch-mult">Mult</span>
       <span class="ch-profit">Winnings</span>
-      <span class="ch-time">Time / Address</span>
+      <span class="ch-spent">Spent</span>
     </div>
     <div class="panel-body" id="alert-feed"><div class="empty">No whales yet…</div></div>
   </div>
@@ -529,7 +533,7 @@ const fmt = {
 };
 
 // ── Client-side category detection (mirrors Python utils/market_filter.py) ────
-const _SPORTS_KW = [' vs ', ' vs. ', 'nfl', 'nba', 'nhl', 'mlb', 'mls', 'ufc', 'pga', 'fifa', 'world cup', 'champions league', 'premier league', 'la liga', 'bundesliga', 'serie a', 'ligue 1', 'super bowl', 'playoffs', 'grand prix', 'formula 1', 'spread', 'over/under', 'moneyline', 'money line', 'point total', 'game total', 'match winner', 'to win', 'mvp', 'rushing yards', 'passing yards', 'touchdowns', 'home runs', 'strikeouts', 'rebounds', 'assists', 'goals scored'];
+const _SPORTS_KW = [' vs ', ' vs. ', 'nfl', 'nba', 'nhl', 'mlb', 'mls', 'ufc', 'pga', 'fifa', 'world cup', 'champions league', 'premier league', 'la liga', 'bundesliga', 'serie a', 'ligue 1', 'super bowl', 'playoffs', 'grand prix', 'formula 1', 'spread', 'over/under', 'moneyline', 'money line', 'point total', 'game total', 'match winner', 'to win', 'mvp', 'rushing yards', 'passing yards', 'touchdowns', 'home runs', 'strikeouts', 'rebounds', 'assists', 'goals scored', ' fc ', ' afc ', ' united ', 'crystal palace', 'arsenal', 'liverpool', 'manchester', 'chelsea', 'tottenham', 'everton', 'leicester', 'wolves', 'brighton', 'brentford', 'fulham', 'bournemouth', 'nottingham', 'west ham', 'aston villa', 'newcastle', 'real madrid', 'barcelona', 'bayern', 'juventus', 'inter milan', 'ac milan', 'psg', 'dortmund', 'atletico', 'quarterback', 'pitcher', 'goalkeeper', 'halftime', 'full time', 'first half', 'second half', 'match result', 'handicap'];
 const _GEO_KW = ['war', 'conflict', 'battle', 'attack', 'invasion', 'ceasefire', 'military', 'airstrike', 'missile', 'nuclear', 'nato', 'president', 'prime minister', 'election', 'vote', 'coup', 'assassination', 'congress', 'senate', 'sanction', 'treaty', 'summit', 'diplomat', 'united nations', 'embargo', 'ukraine', 'russia', 'china', 'taiwan', 'iran', 'israel', 'gaza', 'north korea', 'tariff', 'trade war', 'federal reserve', 'fed rate', 'revolution', 'uprising', 'civil war', 'terrorist', 'cyberattack'];
 const _CRYPTO_KW = ['bitcoin', 'btc', 'ethereum', 'eth', 'solana', 'sol', 'xrp', 'ripple', 'dogecoin', 'doge', 'cardano', 'ada', 'polygon', 'matic', 'avalanche', 'avax', 'chainlink', 'link', 'polkadot', 'dot', 'litecoin', 'ltc', 'shiba', 'pepe', 'memecoin', 'meme coin', 'crypto', 'cryptocurrency', 'blockchain', 'defi', 'nft'];
 const _FINANCE_KW = ['stock', 's&p', 's&p 500', 'nasdaq', 'dow jones', 'treasury', 'bond', 'yield', 'inflation', 'gdp', 'recession', 'ipo', 'earnings', 'market cap', 'forex', 'oil price', 'gold price', 'interest rate', 'cpi', 'jobs report', 'unemployment'];
@@ -843,6 +847,35 @@ async function refreshWhales() {
 setInterval(refreshWhales, 10000);
 refreshWhales();
 
+async function refreshLeaderboard() {
+  try {
+    const res = await fetch('/api/leaderboard').then(r => r.json());
+    const { mode, entries: data } = res;
+    const el = document.getElementById('leaderboard-list');
+    const hdr = document.getElementById('ldr-mode');
+    document.getElementById('ldr-count').textContent = data.length;
+    if (hdr) hdr.textContent = mode === 'earners' ? 'by winnings' : 'by total spent';
+    if (!data.length) { el.innerHTML = '<div class="empty">Not enough data yet</div>'; return; }
+    el.innerHTML = data.map((e, i) => {
+      const valLabel = mode === 'earners'
+        ? `<span class="pos">+${fmt.usd(e.total_pnl_usd)}</span>`
+        : fmt.usd(e.total_spent);
+      return `<div class="lb-row">
+        <div class="lb-rank ${i<3?'top':''}">${i+1}</div>
+        <div class="lb-info">
+          <div class="lb-addr">${fmt.addr(e.address)}</div>
+          <div class="lb-stats">${e.total_fills} bets</div>
+        </div>
+        <div class="lb-right">
+          <div class="lb-pnl">${valLabel}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+setInterval(refreshLeaderboard, 15000);
+refreshLeaderboard();
+
 // ── History load + infinite scroll ───────────────────────────────────────────
 let flowOffset = 0, whaleOffset = 0;
 let flowHasMore = false, whaleHasMore = false;
@@ -902,14 +935,14 @@ function buildFlowRowEl(row) {
     ${row.is_finance ? '<span class="cat-tag finance">FIN</span>' : ''}
     ${row.is_tech ? '<span class="cat-tag tech">TECH</span>' : ''}
     ${row.is_culture ? '<span class="cat-tag culture">CULT</span>' : ''}
-    <div class="flow-spent">
-      <div class="flow-usd ${usdCls}">${fmt.usd(row.usd_value)}</div>
-    </div>
-    <div class="flow-mult">${rMult || ''}</div>
-    ${rProfit ? `<div class="flow-profit"><div class="flow-profit-amount">+${fmt.vol(row.potential_profit)}</div></div>` : '<div class="flow-profit"></div>'}
     <div class="flow-time">
       <div class="flow-ts">${fmt.ts(row.ts)}</div>
       <div class="flow-addr">${fmt.addr(row.address)}</div>
+    </div>
+    <div class="flow-mult">${rMult || ''}</div>
+    ${rProfit ? `<div class="flow-profit"><div class="flow-profit-amount">+${fmt.vol(row.potential_profit)}</div></div>` : '<div class="flow-profit"></div>'}
+    <div class="flow-spent">
+      <div class="flow-usd ${usdCls}">${fmt.usd(row.usd_value)}</div>
     </div>`;
   return div;
 }
@@ -1142,14 +1175,14 @@ function buildAlertEl(a, isNew=false) {
     ${a.is_finance ? '<span class="cat-tag finance">FIN</span>' : ''}
     ${a.is_tech ? '<span class="cat-tag tech">TECH</span>' : ''}
     ${a.is_culture ? '<span class="cat-tag culture">CULT</span>' : ''}
-    <div class="alert-spent">
-      <div class="alert-usd">${fmt.usd(a.usd_value)}</div>
-    </div>
-    <div class="alert-mult">${mult || ''}</div>
-    ${profit ? `<div class="alert-profit"><div class="alert-profit-amount">+${fmt.vol(a.potential_profit)}</div></div>` : '<div class="alert-profit"></div>'}
     <div class="alert-time">
       <div class="alert-ts">${fmt.ts(a.ts||new Date().toISOString())}</div>
       <div class="alert-addr">${addrHtml}</div>
+    </div>
+    <div class="alert-mult">${mult || ''}</div>
+    ${profit ? `<div class="alert-profit"><div class="alert-profit-amount">+${fmt.vol(a.potential_profit)}</div></div>` : '<div class="alert-profit"></div>'}
+    <div class="alert-spent">
+      <div class="alert-usd">${fmt.usd(a.usd_value)}</div>
     </div>`;
   return div;
 }

@@ -400,6 +400,30 @@ def get_top_earners() -> list[dict]:
     return [dict(r) for r in rows]
 
 
+def get_top_spenders(limit: int = 20) -> list[dict]:
+    """Top addresses by total USD spent."""
+    rows = _conn().execute(
+        """SELECT address,
+                  COUNT(*)            AS total_fills,
+                  SUM(usd_value)      AS total_spent,
+                  SUM(CASE WHEN pnl_usd IS NOT NULL THEN pnl_usd ELSE 0 END) AS total_pnl_usd,
+                  SUM(CASE WHEN outcome = 'win' THEN 1 ELSE 0 END) AS wins,
+                  SUM(CASE WHEN outcome IS NOT NULL AND outcome NOT IN ('push','') THEN 1 ELSE 0 END) AS resolved_fills
+           FROM fills
+           GROUP BY address
+           HAVING total_spent >= 5000
+           ORDER BY total_spent DESC
+           LIMIT ?""",
+        (limit,),
+    ).fetchall()
+    result = []
+    for r in rows:
+        d = dict(r)
+        d["win_rate"] = (d["wins"] / d["resolved_fills"]) if d["resolved_fills"] else None
+        result.append(d)
+    return result
+
+
 def get_address_fills(address: str, limit: int = 200) -> list[dict]:
     """Return all fills for an address, newest first."""
     rows = _conn().execute(

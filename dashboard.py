@@ -127,6 +127,17 @@ async def top_whales():
     return {"mode": "earners", "whales": rows}
 
 
+@app.get("/api/leaderboard")
+async def leaderboard():
+    """Top spenders / earners for the leaderboard panel."""
+    # Prefer earners with PnL data, fall back to biggest spenders
+    earners = db.get_top_earners()
+    if earners:
+        return {"mode": "earners", "entries": earners}
+    spenders = db.get_top_spenders()
+    return {"mode": "spenders", "entries": spenders}
+
+
 @app.get("/api/markets")
 async def tracked_markets():
     from polymarket.market_cache import get_markets

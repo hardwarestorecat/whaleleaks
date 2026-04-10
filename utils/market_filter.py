@@ -16,6 +16,16 @@ _SPORTS_KEYWORDS = [
     "game total", "match winner", "to win", "mvp", "rushing yards",
     "passing yards", "touchdowns", "home runs", "strikeouts", "rebounds",
     "assists", "goals scored",
+    # Soccer / football clubs & leagues
+    " fc ", " fc?", " afc ", " united ", "crystal palace", "arsenal",
+    "liverpool", "manchester", "chelsea", "tottenham", "everton",
+    "leicester", "wolves", "brighton", "brentford", "fulham",
+    "bournemouth", "nottingham", "west ham", "aston villa", "newcastle",
+    "real madrid", "barcelona", "bayern", "juventus", "inter milan",
+    "ac milan", "psg", "dortmund", "atletico",
+    # Other common sports terms
+    "quarterback", "pitcher", "goalkeeper", "halftime", "full time",
+    "first half", "second half", "match result", "handicap",
 ]
 
 
