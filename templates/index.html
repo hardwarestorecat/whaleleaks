@@ -55,7 +55,6 @@
   .panel.mobile-whale-panel, .panel.mobile-leaderboard-panel { display: none; }
   .panel-header { padding: 8px 14px; border-bottom: 1px solid var(--border); background: var(--surface); font-weight: 600; font-size: 11px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
   .panel-header .badge { background: var(--border); border-radius: 8px; padding: 1px 6px; font-size: 10px; }
-  .sort-select { background: var(--bg); color: var(--muted); border: 1px solid var(--border); border-radius: 4px; font-size: 10px; padding: 2px 6px; cursor: pointer; text-transform: none; letter-spacing: 0; }
   .panel-body { overflow-y: auto; flex: 1; }
 
   /* ── Flash animation — bright pulse ── */
@@ -75,6 +74,9 @@
   .ch-mult { width: 50px; flex-shrink: 0; text-align: center; }
   .ch-profit { width: 80px; flex-shrink: 0; text-align: right; }
   .ch-time { width: 120px; flex-shrink: 0; text-align: right; }
+  .ch-sortable { cursor: pointer; user-select: none; }
+  .ch-sortable:hover { color: var(--text); }
+  .ch-sortable .sort-arrow { font-size: 9px; margin-left: 2px; }
 
   .flow-row { padding: 8px 14px; border-bottom: 1px solid rgba(48,54,61,.5); display: flex; align-items: flex-start; gap: 10px; font-size: 14px; transition: background .1s; }
   .flow-row.whale-hl { background: rgba(88,166,255,.06); }
@@ -444,38 +446,28 @@
   <div class="panel mobile-active">
     <div class="panel-header">
       <span>Order Flow ≥$500 <span class="badge" id="flow-count">0</span></span>
-      <select class="sort-select" id="flow-sort" onchange="sortFlowFeed()">
-        <option value="latest">Latest</option>
-        <option value="usd">Amount</option>
-        <option value="profit">Winnings</option>
-      </select>
     </div>
     <div class="col-headers flow-cols">
       <span class="ch-side">Side</span>
       <span class="ch-market">Market</span>
-      <span class="ch-time">Time / Address</span>
+      <span class="ch-time ch-sortable" onclick="setFeedSort('flow','latest')">Time <span class="sort-arrow" id="flow-sort-latest">↓</span></span>
       <span class="ch-mult">Mult</span>
-      <span class="ch-profit">Winnings</span>
-      <span class="ch-spent">Spent</span>
+      <span class="ch-profit ch-sortable" onclick="setFeedSort('flow','profit')">Winnings <span class="sort-arrow" id="flow-sort-profit"></span></span>
+      <span class="ch-spent ch-sortable" onclick="setFeedSort('flow','usd')">Spent <span class="sort-arrow" id="flow-sort-usd"></span></span>
     </div>
     <div class="panel-body" id="flow-feed"><div class="empty">Waiting for orders…</div></div>
   </div>
   <div class="panel">
     <div class="panel-header">
       <span>Whale Alerts ≥$3k spend / +$1k profit <span class="badge" id="whale-count">0</span></span>
-      <select class="sort-select" id="whale-sort" onchange="sortWhaleFeed()">
-        <option value="latest">Latest</option>
-        <option value="usd">Amount</option>
-        <option value="profit">Winnings</option>
-      </select>
     </div>
     <div class="col-headers alert-cols">
       <span class="ch-side">Side</span>
       <span class="ch-market">Market</span>
-      <span class="ch-time">Time / Address</span>
+      <span class="ch-time ch-sortable" onclick="setFeedSort('whale','latest')">Time <span class="sort-arrow" id="whale-sort-latest">↓</span></span>
       <span class="ch-mult">Mult</span>
-      <span class="ch-profit">Winnings</span>
-      <span class="ch-spent">Spent</span>
+      <span class="ch-profit ch-sortable" onclick="setFeedSort('whale','profit')">Winnings <span class="sort-arrow" id="whale-sort-profit"></span></span>
+      <span class="ch-spent ch-sortable" onclick="setFeedSort('whale','usd')">Spent <span class="sort-arrow" id="whale-sort-usd"></span></span>
     </div>
     <div class="panel-body" id="alert-feed"><div class="empty">No whales yet…</div></div>
   </div>
@@ -1236,9 +1228,26 @@ function buildAlertEl(a, isNew=false) {
 }
 
 // ── Feed sorting ─────────────────────────────────────────────────────────────
+const feedSortState = { flow: 'latest', whale: 'latest' };
+
 function getActiveSortAttr(containerId) {
-  const key = document.getElementById(containerId === 'flow-feed' ? 'flow-sort' : 'whale-sort').value;
+  const panel = containerId === 'flow-feed' ? 'flow' : 'whale';
+  const key = feedSortState[panel];
   return key === 'usd' ? 'sortUsd' : key === 'profit' ? 'sortProfit' : 'sortTs';
+}
+
+function updateSortArrows(panel) {
+  ['latest', 'usd', 'profit'].forEach(k => {
+    const el = document.getElementById(`${panel}-sort-${k}`);
+    if (el) el.textContent = feedSortState[panel] === k ? '↓' : '';
+  });
+}
+
+function setFeedSort(panel, key) {
+  feedSortState[panel] = key;
+  updateSortArrows(panel);
+  if (panel === 'flow') sortFeed('flow-feed', '.flow-row');
+  else sortFeed('alert-feed', '.alert-item');
 }
 
 function insertSorted(feed, el, selector, attr) {
@@ -1261,8 +1270,6 @@ function sortFeed(containerId, selector) {
   rows.sort((a, b) => parseFloat(b.dataset[attr]) - parseFloat(a.dataset[attr]));
   rows.forEach(r => feed.appendChild(r));
 }
-function sortFlowFeed()  { sortFeed('flow-feed', '.flow-row'); }
-function sortWhaleFeed() { sortFeed('alert-feed', '.alert-item'); }
 </script>
 </body>
 </html>
