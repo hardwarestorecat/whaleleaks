@@ -238,7 +238,7 @@
   #addr-modal-close { cursor: pointer; color: var(--muted); font-size: 18px; line-height: 1; padding: 2px 6px; border-radius: 4px; }
   #addr-modal-close:hover { background: rgba(255,255,255,.07); color: var(--text); }
   #addr-modal-body { overflow-y: auto; flex: 1; }
-  .fill-row { display: grid; grid-template-columns: 80px 1fr 60px 80px 80px 80px 70px; gap: 8px; align-items: center; padding: 7px 16px; border-bottom: 1px solid rgba(48,54,61,.4); font-size: 11px; }
+  .fill-row { display: grid; grid-template-columns: 80px 1fr 46px 50px 66px 66px 60px 56px; gap: 8px; align-items: center; padding: 7px 16px; border-bottom: 1px solid rgba(48,54,61,.4); font-size: 11px; }
   .fill-row.header { background: var(--surface); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; position: sticky; top: 0; border-bottom: 1px solid var(--border); }
   .fill-row:not(.header):hover { background: rgba(255,255,255,.02); }
   .fill-outcome { font-weight: 700; }
@@ -366,9 +366,11 @@
     #addr-modal { align-items: center; }
     #addr-modal-box { width: 95vw; max-height: 85vh; border-radius: 10px; }
     #addr-modal-body { overflow-x: hidden; }
-    .fill-row { min-width: 0; font-size: 10px; padding: 5px 8px; gap: 3px;
-      grid-template-columns: 60px 1fr 30px 44px 50px 44px 44px; }
-    .fill-row.header { font-size: 8px; }
+    .fill-row { min-width: 0; font-size: 10px; padding: 5px 8px; gap: 4px;
+      grid-template-columns: 1fr 30px 36px 46px 46px 46px; }
+    .fill-row > span:nth-child(1) { display: none; }  /* hide Date */
+    .fill-row > span:nth-child(7) { display: none; }  /* hide P&L */
+    .fill-row.header { font-size: 9px; }
     #addr-modal-title { font-size: 11px; word-break: break-all; }
     #addr-modal-stats { font-size: 10px; }
   }
@@ -500,6 +502,7 @@
         <span>Date</span><span>Market</span><span>Side</span>
         <span style="text-align:right">Price</span>
         <span style="text-align:right">Spent</span>
+        <span style="text-align:right">Wins</span>
         <span style="text-align:right">P&amp;L</span>
         <span style="text-align:right">Result</span>
       </div>
@@ -1089,12 +1092,17 @@ async function openAddrModal(address) {
         : '—';
       const side = (f.side || '').toLowerCase();
       const sideCls = side === 'yes' ? 'yes' : side === 'no' ? 'no' : '';
+      const potentialProfit = f.quantity != null ? f.quantity - f.usd_value : null;
+      const winsStr = potentialProfit != null && potentialProfit > 0
+        ? `<span style="color:#3fb950;font-weight:600">+${fmt.vol(potentialProfit)}</span>`
+        : '—';
       return `<div class="fill-row">
         <span style="color:var(--muted)">${fmt.date(f.ts)}</span>
         <span title="${f.market_title}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.market_title}</span>
         <span class="${sideCls}" style="font-weight:700">${(f.side||'').toUpperCase()}</span>
         <span style="text-align:right;color:var(--muted)">${f.price_cents}¢</span>
         <span style="text-align:right;font-weight:600">$${f.usd_value.toLocaleString('en-US',{maximumFractionDigits:0})}</span>
+        <span style="text-align:right">${winsStr}</span>
         <span style="text-align:right">${pnlStr}</span>
         <span style="text-align:right" class="fill-outcome ${outcome}">${outcome.toUpperCase()}</span>
       </div>`;
