@@ -207,11 +207,15 @@
   .top-bar-tags { flex: 0 0 20%; padding: 6px 10px; overflow: hidden; display: flex; flex-direction: column; gap: 4px; }
   .top-bar-hot { flex: 1; overflow-y: auto; min-height: 0; }
   .top-bar-filters-sep { height: 1px; background: var(--border); margin: 4px 0; flex-shrink: 0; }
-  .top-bar-hot-list { display: flex; flex-direction: column; gap: 1px; }
-  .hot-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; font-size: 11px; }
-  .hot-row.hot-header { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; font-weight: 600; border-bottom: 1px solid var(--border); padding-bottom: 3px; margin-bottom: 2px; }
-  .hot-row .hot-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
-  .hot-row .hot-vol { flex-shrink: 0; font-weight: 700; font-size: 10px; color: var(--muted); }
+  .top-bar-hot-list { display: flex; flex-direction: column; }
+  .hot-row { display: flex; align-items: center; gap: 6px; padding: 5px 10px; font-size: 11px; border-bottom: 1px solid var(--border); }
+  .hot-row:hover { background: rgba(255,255,255,.02); }
+  .hot-row.hot-header { padding: 4px 10px; background: var(--surface); position: sticky; top: 0; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; font-weight: 600; }
+  .hot-row.hot-header:hover { background: var(--surface); }
+  .hot-rank { width: 18px; text-align: center; color: var(--muted); font-size: 12px; flex-shrink: 0; }
+  .hot-rank.top { color: var(--blue); font-weight: 700; }
+  .hot-row .hot-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-size: 12px; }
+  .hot-row .hot-vol { flex-shrink: 0; font-weight: 600; font-size: 12px; }
   .top-bar-section { flex: 0 0 40%; border-left: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
   .top-bar-label { padding: 4px 10px 2px; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; font-weight: 700; flex-shrink: 0; }
   .top-bar-scroll { overflow-y: auto; flex: 1; min-height: 0; }
@@ -428,6 +432,7 @@
       <div class="top-bar-hot">
         <div class="top-bar-label">Highest Volume</div>
         <div class="hot-row hot-header">
+          <span class="hot-rank"></span>
           <span class="hot-title">Market</span>
           <span class="hot-vol">Volume</span>
         </div>
@@ -652,8 +657,9 @@ async function refreshToday() {
       // Also populate top-bar hot markets
       const hotEl = document.getElementById('top-bar-hot');
       if (hotEl) {
-        hotEl.innerHTML = d.hot_markets.map(m =>
+        hotEl.innerHTML = d.hot_markets.map((m, i) =>
           `<div class="hot-row">
+            <span class="hot-rank ${i<3?'top':''}">${i+1}</span>
             <span class="hot-title" title="${m.market_title}">${m.market_title}</span>
             <span class="hot-vol">${fmt.vol(m.total_volume)}</span>
           </div>`
