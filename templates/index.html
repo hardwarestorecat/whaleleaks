@@ -95,7 +95,7 @@
 
   .flow-time { flex-shrink: 0; width: 80px; text-align: center; }
   .flow-ts { font-size: 12px; color: var(--muted); }
-  .flow-date { font-size: 10px; color: var(--border); margin-top: 1px; }
+  .flow-date { font-size: 10px; color: var(--muted); margin-top: 1px; }
   .flow-tags { font-size: 11px; color: var(--muted); margin-top: 2px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
   .flow-body { flex: 1; min-width: 0; }
   .flow-market { white-space: normal; word-break: break-word; line-height: 1.3; font-size: 14px; }
@@ -121,7 +121,7 @@
   .alert-item:hover { background: rgba(255,255,255,.02); }
   .alert-time { flex-shrink: 0; width: 80px; text-align: center; }
   .alert-ts { font-size: 12px; color: var(--muted); }
-  .alert-date { font-size: 10px; color: var(--border); margin-top: 1px; }
+  .alert-date { font-size: 10px; color: var(--muted); margin-top: 1px; }
   .alert-tags { font-size: 11px; color: var(--muted); margin-top: 2px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
   .alert-side { width: 54px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
   .side-badge { width: 54px; text-align: center; border-radius: 4px; font-size: 11px; font-weight: 800; padding: 3px 3px; flex-shrink: 0; }
@@ -209,6 +209,7 @@
   .top-bar-filters-sep { height: 1px; background: var(--border); margin: 4px 0; flex-shrink: 0; }
   .top-bar-hot-list { display: flex; flex-direction: column; gap: 1px; }
   .hot-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; font-size: 11px; }
+  .hot-row.hot-header { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; font-weight: 600; border-bottom: 1px solid var(--border); padding-bottom: 3px; margin-bottom: 2px; }
   .hot-row .hot-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
   .hot-row .hot-vol { flex-shrink: 0; font-weight: 700; font-size: 10px; color: var(--muted); }
   .top-bar-section { flex: 0 0 40%; border-left: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
@@ -426,6 +427,10 @@
     <div class="top-bar-tags">
       <div class="top-bar-hot">
         <div class="top-bar-label">Highest Volume</div>
+        <div class="hot-row hot-header">
+          <span class="hot-title">Market</span>
+          <span class="hot-vol">Volume</span>
+        </div>
         <div class="top-bar-hot-list" id="top-bar-hot"><span class="ab-placeholder">loading…</span></div>
       </div>
       <div class="top-bar-filters-sep"></div>
