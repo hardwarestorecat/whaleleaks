@@ -206,6 +206,7 @@
   .top-bar { display: flex; border-bottom: 1px solid var(--border); background: var(--bg); flex-shrink: 0; height: 210px; }
   .top-bar-tags { flex: 0 0 20%; padding: 6px 10px; overflow: hidden; display: flex; flex-direction: column; gap: 4px; }
   .top-bar-hot { flex: 1; overflow-y: auto; min-height: 0; }
+  .top-bar-filters-sep { height: 1px; background: var(--border); margin: 4px 0; flex-shrink: 0; }
   .top-bar-hot-list { display: flex; flex-direction: column; gap: 1px; }
   .hot-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; font-size: 11px; }
   .hot-row .hot-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
@@ -423,6 +424,11 @@
 <div class="view" id="view-live" style="flex-direction:column">
   <div class="top-bar">
     <div class="top-bar-tags">
+      <div class="top-bar-hot">
+        <div class="top-bar-label">Highest Volume</div>
+        <div class="top-bar-hot-list" id="top-bar-hot"><span class="ab-placeholder">loading…</span></div>
+      </div>
+      <div class="top-bar-filters-sep"></div>
       <div class="feed-filters">
         <button class="feed-filter-btn whale on"    id="ff-whale"    onclick="toggleFlowExclude('whale')">Whale</button>
         <button class="feed-filter-btn geo on"      id="ff-geo"      onclick="toggleFlowExclude('geo')">Geopolitics</button>
@@ -432,10 +438,6 @@
         <button class="feed-filter-btn finance on"   id="ff-finance"  onclick="toggleFlowExclude('finance')">Finance</button>
         <button class="feed-filter-btn tech on"      id="ff-tech"     onclick="toggleFlowExclude('tech')">Tech</button>
         <button class="feed-filter-btn culture on"   id="ff-culture"  onclick="toggleFlowExclude('culture')">Culture</button>
-      </div>
-      <div class="top-bar-hot">
-        <div class="top-bar-label">Highest Volume</div>
-        <div class="top-bar-hot-list" id="top-bar-hot"><span class="ab-placeholder">loading…</span></div>
       </div>
     </div>
     <div class="top-bar-section">
