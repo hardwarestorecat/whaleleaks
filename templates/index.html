@@ -66,54 +66,54 @@
   .new { animation: newflash .9s ease forwards; }
 
   /* Order flow */
-  .flow-row { padding: 7px 14px; border-bottom: 1px solid rgba(48,54,61,.5); display: flex; align-items: flex-start; gap: 10px; font-size: 12px; transition: background .1s; }
-  .flow-row.whale-hl { background: rgba(227,179,65,.07); }
+  .flow-row { padding: 8px 14px; border-bottom: 1px solid rgba(48,54,61,.5); display: flex; align-items: flex-start; gap: 10px; font-size: 14px; transition: background .1s; }
+  .flow-row.whale-hl { background: rgba(88,166,255,.06); }
   .flow-row.geo-hl { border-left: 2px solid var(--blue); }
   .flow-row:hover { background: rgba(255,255,255,.03) !important; }
 
   .flow-side { width: 54px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .flow-side-badge { width: 54px; text-align: center; border-radius: 4px; font-size: 10px; font-weight: 800; padding: 2px 3px; letter-spacing: .3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .flow-side-badge { width: 54px; text-align: center; border-radius: 4px; font-size: 11px; font-weight: 800; padding: 3px 3px; letter-spacing: .3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .flow-side-badge.yes     { background: rgba(63,185,80,.2);    color: var(--yes); }
   .flow-side-badge.no      { background: rgba(248,81,73,.2);    color: var(--no); }
   .flow-side-badge.outcome { background: rgba(188,140,255,.15); color: var(--purple); }
-  .flow-odds { font-size: 11px; font-weight: 700; font-family: monospace; }
+  .flow-odds { font-size: 12px; font-weight: 700; font-family: monospace; }
   .flow-odds.yes     { color: var(--yes); }
   .flow-odds.no      { color: var(--no); }
   .flow-odds.outcome { color: var(--purple); }
 
   .flow-body { flex: 1; min-width: 0; }
-  .flow-market { white-space: normal; word-break: break-word; line-height: 1.3; }
-  .flow-meta { color: var(--muted); font-size: 10px; margin-top: 1px; }
+  .flow-market { white-space: normal; word-break: break-word; line-height: 1.3; font-size: 14px; }
+  .flow-meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
   .flow-profit { flex-shrink: 0; text-align: right; min-width: 80px; }
-  .flow-profit-amount { font-size: 15px; font-weight: 800; color: #3fb950; line-height: 1.1; }
-  .flow-profit-mult { font-size: 10px; color: var(--muted); }
-  .flow-right { text-align: right; flex-shrink: 0; min-width: 70px; }
-  .flow-usd { font-weight: 600; font-size: 12px; }
-  .flow-usd.whale { color: var(--gold); }
+  .flow-profit-amount { font-size: 16px; font-weight: 800; color: #3fb950; line-height: 1.1; }
+  .flow-profit-mult { font-size: 11px; color: var(--muted); }
+  .flow-right { text-align: right; flex-shrink: 0; min-width: 80px; }
+  .flow-usd { font-weight: 700; font-size: 15px; }
+  .flow-usd.whale { color: var(--blue); }
   .flow-usd.big   { color: var(--blue); }
-  .flow-ts { font-size: 11px; color: var(--muted); margin-top: 1px; }
-  .whale-tag { font-size: 9px; background: rgba(227,179,65,.2); color: var(--gold); border-radius: 3px; padding: 1px 4px; font-weight: 700; flex-shrink: 0; }
-  .geo-tag  { font-size: 9px; background: rgba(88,166,255,.15); color: var(--blue); border-radius: 3px; padding: 1px 4px; font-weight: 700; flex-shrink: 0; }
+  .flow-ts { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .whale-tag { font-size: 10px; background: rgba(88,166,255,.15); color: var(--blue); border-radius: 3px; padding: 2px 5px; font-weight: 700; flex-shrink: 0; }
+  .geo-tag  { font-size: 10px; background: rgba(88,166,255,.15); color: var(--blue); border-radius: 3px; padding: 2px 5px; font-weight: 700; flex-shrink: 0; }
 
   /* Whale alerts */
-  .alert-item { padding: 10px 14px; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 28px 1fr auto auto; gap: 8px; align-items: start; }
+  .alert-item { padding: 10px 14px; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 30px 1fr auto auto; gap: 10px; align-items: start; }
   .alert-item:hover { background: rgba(255,255,255,.02); }
-  .side-badge { width: 28px; height: 28px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; }
+  .side-badge { width: 30px; height: 30px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
   .side-badge.yes { background: rgba(63,185,80,.15); color: var(--yes); }
   .side-badge.no  { background: rgba(248,81,73,.15); color: var(--no); }
   .side-badge.unknown { background: rgba(139,148,158,.1); color: var(--muted); }
-  .alert-market { font-weight: 600; font-size: 12px; line-height: 1.3; }
-  .alert-meta { color: var(--muted); font-size: 10px; margin-top: 2px; }
-  .alert-whale { margin-top: 3px; font-size: 10px; display: flex; align-items: center; gap: 4px; }
-  .addr { font-family: monospace; color: var(--purple); }
+  .alert-market { font-weight: 600; font-size: 14px; line-height: 1.3; }
+  .alert-meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .alert-whale { margin-top: 3px; font-size: 12px; display: flex; align-items: center; gap: 5px; }
+  .addr { font-family: monospace; font-size: 13px; color: var(--purple); }
   .alert-profit { text-align: right; }
-  .alert-profit-amount { font-size: 16px; font-weight: 800; color: #3fb950; line-height: 1.1; }
-  .alert-profit-mult { font-size: 10px; color: var(--muted); }
+  .alert-profit-amount { font-size: 18px; font-weight: 800; color: #3fb950; line-height: 1.1; }
+  .alert-profit-mult { font-size: 11px; color: var(--muted); }
   .alert-right { text-align: right; }
-  .alert-usd { font-size: 13px; font-weight: 700; color: var(--gold); }
-  .alert-ts { font-size: 11px; color: var(--muted); margin-top: 2px; }
-  .wr-pill { display: inline-flex; padding: 1px 4px; border-radius: 3px; font-size: 9px; font-weight: 700; }
-  .wr-pill.high { background: rgba(227,179,65,.15); color: var(--gold); }
+  .alert-usd { font-size: 16px; font-weight: 700; color: var(--blue); }
+  .alert-ts { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .wr-pill { display: inline-flex; padding: 2px 5px; border-radius: 3px; font-size: 10px; font-weight: 700; }
+  .wr-pill.high { background: rgba(88,166,255,.15); color: var(--blue); }
   .wr-pill.mid  { background: rgba(88,166,255,.12); color: var(--blue); }
   .wr-pill.low  { background: rgba(139,148,158,.1);  color: var(--muted); }
   .wr-pill.new  { background: rgba(188,140,255,.1);  color: var(--purple); }
@@ -121,14 +121,14 @@
   /* Leaderboard */
   .lb-row { padding: 9px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
   .lb-row:hover { background: rgba(255,255,255,.02); }
-  .lb-rank { width: 16px; text-align: center; color: var(--muted); font-size: 11px; flex-shrink: 0; }
-  .lb-rank.top { color: var(--gold); font-weight: 700; }
+  .lb-rank { width: 18px; text-align: center; color: var(--muted); font-size: 13px; flex-shrink: 0; }
+  .lb-rank.top { color: var(--blue); font-weight: 700; }
   .lb-info { flex: 1; min-width: 0; }
-  .lb-addr { font-family: monospace; font-size: 11px; color: var(--purple); }
-  .lb-stats { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .lb-addr { font-family: monospace; font-size: 13px; color: var(--purple); }
+  .lb-stats { font-size: 11px; color: var(--muted); margin-top: 1px; }
   .lb-right { text-align: right; }
-  .lb-wr { font-size: 13px; font-weight: 700; }
-  .lb-pnl { font-size: 10px; margin-top: 1px; }
+  .lb-wr { font-size: 14px; font-weight: 700; }
+  .lb-pnl { font-size: 11px; margin-top: 1px; }
   .pos { color: var(--yes); } .neg { color: var(--no); }
 
   /* Markets tab */
@@ -185,7 +185,7 @@
   .feed-filter-btn { padding: 3px 9px; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 10px; cursor: pointer; font-weight: 600; letter-spacing: .3px; }
   .feed-filter-btn:hover { color: var(--text); }
   .feed-filter-btn.on { color: var(--blue); border-color: var(--blue); background: rgba(88,166,255,.08); }
-  .feed-filter-btn.on.whale { color: var(--gold); border-color: var(--gold); background: rgba(227,179,65,.08); }
+  .feed-filter-btn.on.whale { color: var(--blue); border-color: var(--blue); background: rgba(88,166,255,.08); }
   .feed-filter-btn.on.geo   { color: var(--blue); border-color: var(--blue); background: rgba(88,166,255,.08); }
   .feed-filter-btn.on.sports { color: var(--purple); border-color: var(--purple); background: rgba(188,140,255,.08); }
   .feed-filter-btn.on.politics { color: #bb80ff; border-color: #bb80ff; background: rgba(187,128,255,.08); }
@@ -272,25 +272,27 @@
     .panel.mobile-whale-panel.mobile-active { display: flex; }
 
     /* Flow rows: tighter, compact profit */
-    .flow-row { padding: 6px 10px; gap: 6px; flex-wrap: wrap; }
+    .flow-row { padding: 6px 10px; gap: 6px; flex-wrap: wrap; font-size: 13px; }
     .flow-profit { min-width: auto; }
-    .flow-profit-amount { font-size: 12px; }
-    .flow-profit-mult { font-size: 9px; }
+    .flow-profit-amount { font-size: 13px; }
+    .flow-profit-mult { font-size: 10px; }
     .flow-side { width: 44px; }
-    .flow-side-badge { width: 44px; font-size: 9px; }
+    .flow-side-badge { width: 44px; font-size: 10px; }
     .flow-right { min-width: 58px; }
-    .flow-market { font-size: 11px; }
-    .flow-meta { font-size: 9px; }
+    .flow-usd { font-size: 13px; }
+    .flow-market { font-size: 12px; }
+    .flow-meta { font-size: 10px; }
     .flow-ts { font-size: 10px; }
 
     /* Alert items: compress grid, keep profit visible */
-    .alert-item { grid-template-columns: 24px 1fr auto auto; gap: 6px; padding: 8px 10px; }
-    .alert-profit-amount { font-size: 13px; }
-    .alert-profit-mult { font-size: 9px; }
-    .side-badge { width: 24px; height: 24px; font-size: 8px; border-radius: 4px; }
-    .alert-market { font-size: 11px; }
-    .alert-usd { font-size: 12px; }
+    .alert-item { grid-template-columns: 26px 1fr auto auto; gap: 6px; padding: 8px 10px; }
+    .alert-profit-amount { font-size: 14px; }
+    .alert-profit-mult { font-size: 10px; }
+    .side-badge { width: 26px; height: 26px; font-size: 9px; border-radius: 4px; }
+    .alert-market { font-size: 12px; }
+    .alert-usd { font-size: 14px; }
     .alert-ts { font-size: 10px; }
+    .addr { font-size: 12px; }
 
     /* Leaderboard rows */
     .lb-row { padding: 7px 10px; gap: 6px; }
