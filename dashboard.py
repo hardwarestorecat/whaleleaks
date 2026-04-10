@@ -141,8 +141,12 @@ async def tracked_markets():
 
 @app.get("/api/address/{address}")
 async def address_detail(address: str):
-    stats = db.get_address_stats(address)
-    fills = db.get_address_fills(address)
+    import asyncio
+    loop = asyncio.get_event_loop()
+    stats, fills = await asyncio.gather(
+        loop.run_in_executor(None, db.get_address_stats, address),
+        loop.run_in_executor(None, db.get_address_fills, address),
+    )
     return {"stats": stats, "fills": fills}
 
 

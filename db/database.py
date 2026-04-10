@@ -73,6 +73,7 @@ def init() -> None:
         );
 
         CREATE INDEX IF NOT EXISTS idx_fills_address      ON fills(address);
+        CREATE INDEX IF NOT EXISTS idx_fills_addr_ts     ON fills(address, ts DESC);
         CREATE INDEX IF NOT EXISTS idx_fills_condition    ON fills(condition_id);
         CREATE INDEX IF NOT EXISTS idx_fills_unresolved   ON fills(condition_id) WHERE outcome IS NULL AND trade_side = 'BUY';
 

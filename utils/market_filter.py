@@ -11,6 +11,11 @@ _SPORTS_KEYWORDS = [
     "fifa", "world cup", "champions league", "premier league", "la liga",
     "bundesliga", "serie a", "ligue 1", "super bowl", "playoffs",
     "grand prix", "formula 1",
+    # Sports betting terms
+    "spread", "over/under", "moneyline", "money line", "point total",
+    "game total", "match winner", "to win", "mvp", "rushing yards",
+    "passing yards", "touchdowns", "home runs", "strikeouts", "rebounds",
+    "assists", "goals scored",
 ]
 
 

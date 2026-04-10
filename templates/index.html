@@ -51,6 +51,7 @@
   .panel { display: flex; flex-direction: column; border-right: 1px solid var(--border); min-height: 0; flex: 1; }
   .panel:last-child { border-right: none; }
   .panel.narrow  { flex: 0 0 260px; }
+  .panel.mobile-whale-panel { display: none; }
   .panel-header { padding: 8px 14px; border-bottom: 1px solid var(--border); background: var(--surface); font-weight: 600; font-size: 11px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
   .panel-header .badge { background: var(--border); border-radius: 8px; padding: 1px 6px; font-size: 10px; }
   .sort-select { background: var(--bg); color: var(--muted); border: 1px solid var(--border); border-radius: 4px; font-size: 10px; padding: 2px 6px; cursor: pointer; text-transform: none; letter-spacing: 0; }
@@ -90,7 +91,7 @@
   .flow-usd { font-weight: 600; font-size: 12px; }
   .flow-usd.whale { color: var(--gold); }
   .flow-usd.big   { color: var(--blue); }
-  .flow-ts { font-size: 10px; color: var(--border); margin-top: 1px; }
+  .flow-ts { font-size: 11px; color: var(--muted); margin-top: 1px; }
   .whale-tag { font-size: 9px; background: rgba(227,179,65,.2); color: var(--gold); border-radius: 3px; padding: 1px 4px; font-weight: 700; flex-shrink: 0; }
   .geo-tag  { font-size: 9px; background: rgba(88,166,255,.15); color: var(--blue); border-radius: 3px; padding: 1px 4px; font-weight: 700; flex-shrink: 0; }
 
@@ -110,7 +111,7 @@
   .alert-profit-mult { font-size: 10px; color: var(--muted); }
   .alert-right { text-align: right; }
   .alert-usd { font-size: 13px; font-weight: 700; color: var(--gold); }
-  .alert-ts { font-size: 10px; color: var(--border); margin-top: 2px; }
+  .alert-ts { font-size: 11px; color: var(--muted); margin-top: 2px; }
   .wr-pill { display: inline-flex; padding: 1px 4px; border-radius: 3px; font-size: 9px; font-weight: 700; }
   .wr-pill.high { background: rgba(227,179,65,.15); color: var(--gold); }
   .wr-pill.mid  { background: rgba(88,166,255,.12); color: var(--blue); }
@@ -174,7 +175,13 @@
   .load-sentinel { display: flex; align-items: center; justify-content: center; padding: 16px; color: var(--muted); font-size: 11px; }
 
   /* Live feed filter bar */
-  .feed-filters { display: flex; gap: 4px; padding: 6px 10px; border-bottom: 1px solid var(--border); background: var(--bg); flex-shrink: 0; }
+  /* Top bar: filters left, whales right */
+  .top-bar { display: flex; border-bottom: 1px solid var(--border); background: var(--bg); flex-shrink: 0; min-height: 0; }
+  .top-bar-left { flex: 1; padding: 6px 10px; display: flex; align-items: flex-start; }
+  .top-bar-right { flex: 1; border-left: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  .top-bar-label { padding: 4px 10px 2px; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; font-weight: 700; flex-shrink: 0; }
+  .top-bar-whales { overflow-y: auto; flex: 1; max-height: 120px; }
+  .feed-filters { display: flex; flex-wrap: wrap; gap: 4px; flex-shrink: 0; }
   .feed-filter-btn { padding: 3px 9px; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 10px; cursor: pointer; font-weight: 600; letter-spacing: .3px; }
   .feed-filter-btn:hover { color: var(--text); }
   .feed-filter-btn.on { color: var(--blue); border-color: var(--blue); background: rgba(88,166,255,.08); }
@@ -239,11 +246,15 @@
     .ab-group { padding: 4px 10px; }
     .ab-sep { width: auto; height: 1px; align-self: stretch; }
 
-    /* Feed filters: horizontal scroll, no wrap */
+    /* Top bar: stack on mobile, hide whale sidebar */
+    .top-bar { flex-direction: column; }
+    .top-bar-right { display: none; }
+    .top-bar-left { padding: 5px 8px; }
+
+    /* Feed filters: horizontal scroll, no wrap on mobile */
     .feed-filters {
       overflow-x: auto;
       flex-wrap: nowrap;
-      padding: 5px 8px;
       gap: 4px;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
@@ -257,22 +268,29 @@
     #view-live .panel { display: none; }
     #view-live .panel.mobile-active { display: flex; flex: 1; min-height: 0; }
     .panel.narrow { flex: 1; }
+    .panel.mobile-whale-panel { display: none; }
+    .panel.mobile-whale-panel.mobile-active { display: flex; }
 
-    /* Flow rows: tighter, hide profit column */
-    .flow-row { padding: 6px 10px; gap: 6px; }
-    .flow-profit { display: none; }
+    /* Flow rows: tighter, compact profit */
+    .flow-row { padding: 6px 10px; gap: 6px; flex-wrap: wrap; }
+    .flow-profit { min-width: auto; }
+    .flow-profit-amount { font-size: 12px; }
+    .flow-profit-mult { font-size: 9px; }
     .flow-side { width: 44px; }
     .flow-side-badge { width: 44px; font-size: 9px; }
     .flow-right { min-width: 58px; }
     .flow-market { font-size: 11px; }
     .flow-meta { font-size: 9px; }
+    .flow-ts { font-size: 10px; }
 
-    /* Alert items: compress grid, hide profit column */
-    .alert-item { grid-template-columns: 24px 1fr auto; gap: 6px; padding: 8px 10px; }
-    .alert-profit { display: none; }
+    /* Alert items: compress grid, keep profit visible */
+    .alert-item { grid-template-columns: 24px 1fr auto auto; gap: 6px; padding: 8px 10px; }
+    .alert-profit-amount { font-size: 13px; }
+    .alert-profit-mult { font-size: 9px; }
     .side-badge { width: 24px; height: 24px; font-size: 8px; border-radius: 4px; }
     .alert-market { font-size: 11px; }
     .alert-usd { font-size: 12px; }
+    .alert-ts { font-size: 10px; }
 
     /* Leaderboard rows */
     .lb-row { padding: 7px 10px; gap: 6px; }
@@ -298,9 +316,9 @@
     .geo-badge, .geo-spacer { width: 26px; font-size: 8px; }
     .mkt-col-geo { width: 26px; }
 
-    /* Address modal: full-screen bottom sheet */
-    #addr-modal { align-items: flex-end; }
-    #addr-modal-box { width: 100%; max-height: 90vh; border-radius: 12px 12px 0 0; border-left: none; border-right: none; border-bottom: none; }
+    /* Address modal: centered on mobile */
+    #addr-modal { align-items: center; }
+    #addr-modal-box { width: 95vw; max-height: 85vh; border-radius: 10px; }
     #addr-modal-body { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .fill-row { min-width: 480px; font-size: 10px; padding: 6px 12px; gap: 6px; }
     .fill-row.header { font-size: 9px; }
@@ -342,15 +360,23 @@
 
 <!-- Live Feed Tab -->
 <div class="view" id="view-live" style="flex-direction:column">
-  <div class="feed-filters">
-    <button class="feed-filter-btn whale on"    id="ff-whale"    onclick="toggleFlowExclude('whale')">Whale</button>
-    <button class="feed-filter-btn geo on"      id="ff-geo"      onclick="toggleFlowExclude('geo')">Geopolitics</button>
-    <button class="feed-filter-btn politics on"  id="ff-politics" onclick="toggleFlowExclude('politics')">Politics</button>
-    <button class="feed-filter-btn sports on"    id="ff-sports"   onclick="toggleFlowExclude('sports')">Sports</button>
-    <button class="feed-filter-btn crypto on"    id="ff-crypto"   onclick="toggleFlowExclude('crypto')">Crypto</button>
-    <button class="feed-filter-btn finance on"   id="ff-finance"  onclick="toggleFlowExclude('finance')">Finance</button>
-    <button class="feed-filter-btn tech on"      id="ff-tech"     onclick="toggleFlowExclude('tech')">Tech</button>
-    <button class="feed-filter-btn culture on"   id="ff-culture"  onclick="toggleFlowExclude('culture')">Culture</button>
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <div class="feed-filters">
+        <button class="feed-filter-btn whale on"    id="ff-whale"    onclick="toggleFlowExclude('whale')">Whale</button>
+        <button class="feed-filter-btn geo on"      id="ff-geo"      onclick="toggleFlowExclude('geo')">Geopolitics</button>
+        <button class="feed-filter-btn politics on"  id="ff-politics" onclick="toggleFlowExclude('politics')">Politics</button>
+        <button class="feed-filter-btn sports on"    id="ff-sports"   onclick="toggleFlowExclude('sports')">Sports</button>
+        <button class="feed-filter-btn crypto on"    id="ff-crypto"   onclick="toggleFlowExclude('crypto')">Crypto</button>
+        <button class="feed-filter-btn finance on"   id="ff-finance"  onclick="toggleFlowExclude('finance')">Finance</button>
+        <button class="feed-filter-btn tech on"      id="ff-tech"     onclick="toggleFlowExclude('tech')">Tech</button>
+        <button class="feed-filter-btn culture on"   id="ff-culture"  onclick="toggleFlowExclude('culture')">Culture</button>
+      </div>
+    </div>
+    <div class="top-bar-right">
+      <div class="top-bar-label">Top Whales <span class="badge" id="lb-count">0</span> <span id="lb-mode" style="font-size:9px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0"></span></div>
+      <div class="top-bar-whales" id="whale-list"><span class="ab-placeholder">loading…</span></div>
+    </div>
   </div>
   <div class="mobile-panel-tabs">
     <button class="mobile-panel-tab on" onclick="setMobilePanel(0)">Flow</button>
@@ -380,9 +406,9 @@
     </div>
     <div class="panel-body" id="alert-feed"><div class="empty">No whales yet…</div></div>
   </div>
-  <div class="panel narrow">
-    <div class="panel-header">Top Whales <span class="badge" id="lb-count">0</span> <span id="lb-mode" style="font-size:9px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0"></span></div>
-    <div class="panel-body" id="whale-list"><div class="empty">Not enough data</div></div>
+  <div class="panel narrow mobile-whale-panel">
+    <div class="panel-header">Top Whales</div>
+    <div class="panel-body" id="whale-list-mobile"><div class="empty">Not enough data</div></div>
   </div>
   </div><!-- end flex row -->
 </div>
@@ -443,7 +469,13 @@ const fmt = {
   usd:  v => '$' + Number(v).toLocaleString('en-US', {maximumFractionDigits:0}),
   addr: (a, full=false) => a ? `<span class="addr addr-clickable" onclick="openAddrModal('${a}')" title="${a}">${a.slice(0,6)}…${a.slice(-4)}</span>` : '—',
   addrText: a => a ? a.slice(0,6)+'…'+a.slice(-4) : '—',
-  ts:   s => new Date(s).toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),
+  ts:   s => { const d = new Date(s), now = new Date(), diff = now - d;
+    if (diff < 86400000 && d.getDate() === now.getDate())
+      return d.toLocaleTimeString('en-US', {hour:'numeric',minute:'2-digit',hour12:true});
+    if (diff < 604800000)
+      return d.toLocaleDateString('en-US', {weekday:'short'}) + ' ' + d.toLocaleTimeString('en-US', {hour:'numeric',minute:'2-digit',hour12:true});
+    return d.toLocaleDateString('en-US', {month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US', {hour:'numeric',minute:'2-digit',hour12:true});
+  },
   date: s => new Date(s).toLocaleDateString('en-US', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}),
   vol:  v => v >= 1e6 ? '$'+(v/1e6).toFixed(1)+'M' : v >= 1e3 ? '$'+(v/1e3).toFixed(0)+'K' : '$'+Math.round(v),
   ago:  s => { const d = Math.floor((Date.now()-new Date(s))/1000); return d < 60 ? d+'s ago' : Math.floor(d/60)+'m ago'; },
@@ -451,7 +483,7 @@ const fmt = {
 };
 
 // ── Client-side category detection (mirrors Python utils/market_filter.py) ────
-const _SPORTS_KW = [' vs ', ' vs. ', 'nfl', 'nba', 'nhl', 'mlb', 'mls', 'ufc', 'pga', 'fifa', 'world cup', 'champions league', 'premier league', 'la liga', 'bundesliga', 'serie a', 'ligue 1', 'super bowl', 'playoffs', 'grand prix', 'formula 1'];
+const _SPORTS_KW = [' vs ', ' vs. ', 'nfl', 'nba', 'nhl', 'mlb', 'mls', 'ufc', 'pga', 'fifa', 'world cup', 'champions league', 'premier league', 'la liga', 'bundesliga', 'serie a', 'ligue 1', 'super bowl', 'playoffs', 'grand prix', 'formula 1', 'spread', 'over/under', 'moneyline', 'money line', 'point total', 'game total', 'match winner', 'to win', 'mvp', 'rushing yards', 'passing yards', 'touchdowns', 'home runs', 'strikeouts', 'rebounds', 'assists', 'goals scored'];
 const _GEO_KW = ['war', 'conflict', 'battle', 'attack', 'invasion', 'ceasefire', 'military', 'airstrike', 'missile', 'nuclear', 'nato', 'president', 'prime minister', 'election', 'vote', 'coup', 'assassination', 'congress', 'senate', 'sanction', 'treaty', 'summit', 'diplomat', 'united nations', 'embargo', 'ukraine', 'russia', 'china', 'taiwan', 'iran', 'israel', 'gaza', 'north korea', 'tariff', 'trade war', 'federal reserve', 'fed rate', 'revolution', 'uprising', 'civil war', 'terrorist', 'cyberattack'];
 function isSports(t) { t = (t||'').toLowerCase(); return _SPORTS_KW.some(k => t.includes(k)); }
 function isGeo(t)    { t = (t||'').toLowerCase(); return _GEO_KW.some(k => t.includes(k)); }
@@ -723,11 +755,17 @@ async function refreshWhales() {
     const res = await fetch('/api/whales').then(r => r.json());
     const { mode, whales: data } = res;
     const el = document.getElementById('whale-list');
+    const elMobile = document.getElementById('whale-list-mobile');
     const hdr = document.getElementById('lb-mode');
     document.getElementById('lb-count').textContent = data.length;
     if (hdr) hdr.textContent = mode === 'win_rate' ? 'by win rate' : 'by total earned';
-    if (!data.length) { el.innerHTML = '<div class="empty">Not enough data yet</div>'; return; }
-    el.innerHTML = data.map((w, i) => {
+    if (!data.length) {
+      const empty = '<div class="empty">Not enough data yet</div>';
+      el.innerHTML = empty;
+      if (elMobile) elMobile.innerHTML = empty;
+      return;
+    }
+    const html = data.map((w, i) => {
       const wr = w.win_rate != null ? Math.round(w.win_rate * 100) : null;
       const pnlPos = w.total_pnl_usd >= 0;
       const pnlStr = (pnlPos ? '+' : '') + fmt.usd(w.total_pnl_usd);
@@ -743,6 +781,8 @@ async function refreshWhales() {
         </div>
       </div>`;
     }).join('');
+    el.innerHTML = html;
+    if (elMobile) elMobile.innerHTML = html;
   } catch(e) {}
 }
 setInterval(refreshWhales, 10000);
@@ -900,7 +940,7 @@ async function openAddrModal(address) {
   document.getElementById('addr-modal').classList.add('open');
   document.getElementById('addr-modal-title').textContent = address;
   document.getElementById('addr-modal-stats').textContent = 'Loading…';
-  document.getElementById('addr-fills').innerHTML = '';
+  document.getElementById('addr-fills').innerHTML = '<div class="empty" style="padding:24px;text-align:center;color:var(--muted)">Loading orders…</div>';
   try {
     const d = await fetch(`/api/address/${address}`).then(r => r.json());
     const s = d.stats;
@@ -965,7 +1005,12 @@ function addFlowRow(d) {
   const feed = document.getElementById('flow-feed');
   feed.querySelector('.empty')?.remove();
   div.classList.add('new');
-  feed.prepend(div);
+  const attr = getActiveSortAttr('flow-feed');
+  if (attr === 'sortTs') {
+    feed.prepend(div);
+  } else {
+    insertSorted(feed, div, '.flow-row', attr);
+  }
   if (flowFilter !== 'all') applyFlowFilter();
   flowCount++;
   document.getElementById('flow-count').textContent = flowCount;
@@ -983,7 +1028,13 @@ function updateWhaleCount() {
 function addWhaleAlert(a) {
   const feed = document.getElementById('alert-feed');
   feed.querySelector('.empty')?.remove();
-  feed.prepend(buildAlertEl(a, true));
+  const el = buildAlertEl(a, true);
+  const attr = getActiveSortAttr('alert-feed');
+  if (attr === 'sortTs') {
+    feed.prepend(el);
+  } else {
+    insertSorted(feed, el, '.alert-item', attr);
+  }
   const items = feed.querySelectorAll('.alert-item');
   if (items.length > 100) items[items.length-1].remove();
   if (flowFilter !== 'all') applyFlowFilter();
@@ -1025,12 +1076,28 @@ function buildAlertEl(a, isNew=false) {
 }
 
 // ── Feed sorting ─────────────────────────────────────────────────────────────
+function getActiveSortAttr(containerId) {
+  const key = document.getElementById(containerId === 'flow-feed' ? 'flow-sort' : 'whale-sort').value;
+  return key === 'usd' ? 'sortUsd' : key === 'profit' ? 'sortProfit' : 'sortTs';
+}
+
+function insertSorted(feed, el, selector, attr) {
+  const val = parseFloat(el.dataset[attr]);
+  const rows = feed.querySelectorAll(selector);
+  for (const row of rows) {
+    if (val > parseFloat(row.dataset[attr])) {
+      feed.insertBefore(el, row);
+      return;
+    }
+  }
+  feed.appendChild(el);
+}
+
 function sortFeed(containerId, selector) {
   const feed = document.getElementById(containerId);
   const rows = [...feed.querySelectorAll(selector)];
   if (!rows.length) return;
-  const key = document.getElementById(containerId === 'flow-feed' ? 'flow-sort' : 'whale-sort').value;
-  const attr = key === 'usd' ? 'sortUsd' : key === 'profit' ? 'sortProfit' : 'sortTs';
+  const attr = getActiveSortAttr(containerId);
   rows.sort((a, b) => parseFloat(b.dataset[attr]) - parseFloat(a.dataset[attr]));
   rows.forEach(r => feed.appendChild(r));
 }

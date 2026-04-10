@@ -69,8 +69,8 @@ async def _on_whale(alert: WhaleAlert) -> None:
     from polymarket.market_cache import lookup_market
     cached = lookup_market((alert.market_id or "").lower())
     if cached:
-        d["is_geopolitical"] = cached.get("is_geopolitical", d.get("is_geopolitical", False))
-        d["is_sports"]       = cached.get("is_sports", d.get("is_sports", False))
+        d["is_geopolitical"] = cached.get("is_geopolitical", False) or is_geopolitical(alert.market_title)
+        d["is_sports"]       = cached.get("is_sports", False) or is_sports(alert.market_title)
         d["is_politics"]     = cached.get("is_politics", False)
         d["is_crypto"]       = cached.get("is_crypto", False)
         d["is_finance"]      = cached.get("is_finance", False)

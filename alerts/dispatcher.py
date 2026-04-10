@@ -29,14 +29,27 @@ async def _send_discord(alert: WhaleAlert) -> None:
     color = 0xE74C3C if alert.side in ("yes", "buy") else 0x3498DB
     kw = ", ".join(alert.matched_keywords) if alert.matched_keywords else "—"
 
+    # Build Polymarket URL if slug is available
+    pm_url = ""
+    if alert.market_id and not alert.market_id.startswith("0x"):
+        pm_url = f"https://polymarket.com/event/{alert.market_id}"
+
+    profit = alert.potential_profit
+    mult = alert.return_multiple
+
     fields = [
         {"name": "Side",    "value": alert.side.upper(),              "inline": True},
         {"name": "Price",   "value": f"{alert.price_cents}¢",         "inline": True},
-        {"name": "Qty",     "value": f"{alert.quantity:,.0f}",        "inline": True},
-        {"name": "Value",   "value": f"**${alert.usd_value:,.0f}**",  "inline": True},
+        {"name": "Spent",   "value": f"**${alert.usd_value:,.0f}**",  "inline": True},
+        {"name": "Wins",    "value": f"**+${profit:,.0f}** ({mult:.2f}×)", "inline": True},
+        {"name": "Time",    "value": alert.ts.strftime("%b %d, %I:%M %p UTC"), "inline": True},
         {"name": "Keywords","value": kw,                              "inline": True},
-        {"name": "Market",  "value": f"`{alert.market_id}`",          "inline": False},
     ]
+
+    if pm_url:
+        fields.append({"name": "Market", "value": f"[{alert.market_id}]({pm_url})", "inline": False})
+    else:
+        fields.append({"name": "Market", "value": f"`{alert.market_id}`", "inline": False})
 
     # ── Whale address + win rate (Polymarket only) ──
     if alert.whale_address:
@@ -55,15 +68,17 @@ async def _send_discord(alert: WhaleAlert) -> None:
             wr_str = "First sighting — no history yet"
         fields.insert(0, {"name": f"Whale {addr_short}", "value": wr_str, "inline": False})
 
-    payload = {
-        "embeds": [{
-            "title": f"🐋  Whale Alert — {alert.source.upper()}",
-            "description": f"**{alert.market_title}**",
-            "color": color,
-            "fields": fields,
-            "footer": {"text": alert.ts.strftime("UTC %Y-%m-%d %H:%M:%S")},
-        }]
+    embed = {
+        "title": f"🐋  Whale Alert — {alert.source.upper()}",
+        "description": f"**{alert.market_title}**",
+        "color": color,
+        "fields": fields,
+        "footer": {"text": alert.ts.strftime("UTC %Y-%m-%d %H:%M:%S")},
     }
+    if pm_url:
+        embed["url"] = pm_url
+
+    payload = {"embeds": [embed]}
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(

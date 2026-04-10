@@ -109,8 +109,8 @@ async def _handle(trade: dict, on_whale: WhaleCB | None, on_flow: FlowCB | None)
     # Look up cached market for API-sourced categories; fall back to keywords
     from polymarket.market_cache import lookup_market
     cached = lookup_market(condition_id)
-    geo      = cached["is_geopolitical"] if cached else is_geopolitical(title)
-    sports   = cached["is_sports"]       if cached else is_sports(title)
+    geo      = (cached["is_geopolitical"] if cached else False) or is_geopolitical(title)
+    sports   = (cached["is_sports"]       if cached else False) or is_sports(title)
     politics = cached.get("is_politics", False) if cached else False
     crypto   = cached.get("is_crypto", False)   if cached else False
     finance  = cached.get("is_finance", False)   if cached else False
