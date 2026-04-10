@@ -19,10 +19,61 @@ _SPORTS_KEYWORDS = [
 ]
 
 
+_CRYPTO_KEYWORDS = [
+    "bitcoin", "btc", "ethereum", "eth", "solana", "sol",
+    "xrp", "ripple", "dogecoin", "doge", "cardano", "ada",
+    "polygon", "matic", "avalanche", "avax", "chainlink", "link",
+    "polkadot", "dot", "litecoin", "ltc", "shiba", "pepe",
+    "memecoin", "meme coin", "crypto", "cryptocurrency",
+    "blockchain", "defi", "nft",
+]
+
+_FINANCE_KEYWORDS = [
+    "stock", "s&p", "s&p 500", "nasdaq", "dow jones", "treasury",
+    "bond", "yield", "inflation", "gdp", "recession", "ipo",
+    "earnings", "market cap", "forex", "oil price", "gold price",
+    "interest rate", "cpi", "jobs report", "unemployment",
+]
+
+_TECH_KEYWORDS = [
+    "apple", "google", "microsoft", "amazon", "meta", "nvidia",
+    "openai", "chatgpt", "ai ", "artificial intelligence",
+    "spacex", "tesla", "semiconductor", "chip",
+]
+
+_CULTURE_KEYWORDS = [
+    "oscar", "grammy", "emmy", "golden globe", "box office",
+    "album", "movie", "film", "tv show", "reality tv",
+    "bachelor", "celebrity", "influencer", "tiktok", "youtube",
+    "spotify", "netflix", "disney",
+]
+
+
 def is_sports(title: str) -> bool:
     """Return True if the market title is likely a sports market."""
     lower = title.lower()
     return any(kw in lower for kw in _SPORTS_KEYWORDS)
+
+
+def is_crypto(title: str) -> bool:
+    """Return True if the market title is likely a crypto market."""
+    lower = title.lower()
+    return any(kw in lower for kw in _CRYPTO_KEYWORDS)
+
+
+def is_finance(title: str) -> bool:
+    lower = title.lower()
+    return any(kw in lower for kw in _FINANCE_KEYWORDS)
+
+
+def is_tech(title: str) -> bool:
+    lower = title.lower()
+    return any(kw in lower for kw in _TECH_KEYWORDS)
+
+
+def is_culture(title: str) -> bool:
+    lower = title.lower()
+    return any(kw in lower for kw in _CULTURE_KEYWORDS)
 
 
 def is_geopolitical(title: str) -> bool:

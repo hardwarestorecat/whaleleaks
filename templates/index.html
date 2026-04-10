@@ -485,17 +485,26 @@ const fmt = {
 // ── Client-side category detection (mirrors Python utils/market_filter.py) ────
 const _SPORTS_KW = [' vs ', ' vs. ', 'nfl', 'nba', 'nhl', 'mlb', 'mls', 'ufc', 'pga', 'fifa', 'world cup', 'champions league', 'premier league', 'la liga', 'bundesliga', 'serie a', 'ligue 1', 'super bowl', 'playoffs', 'grand prix', 'formula 1', 'spread', 'over/under', 'moneyline', 'money line', 'point total', 'game total', 'match winner', 'to win', 'mvp', 'rushing yards', 'passing yards', 'touchdowns', 'home runs', 'strikeouts', 'rebounds', 'assists', 'goals scored'];
 const _GEO_KW = ['war', 'conflict', 'battle', 'attack', 'invasion', 'ceasefire', 'military', 'airstrike', 'missile', 'nuclear', 'nato', 'president', 'prime minister', 'election', 'vote', 'coup', 'assassination', 'congress', 'senate', 'sanction', 'treaty', 'summit', 'diplomat', 'united nations', 'embargo', 'ukraine', 'russia', 'china', 'taiwan', 'iran', 'israel', 'gaza', 'north korea', 'tariff', 'trade war', 'federal reserve', 'fed rate', 'revolution', 'uprising', 'civil war', 'terrorist', 'cyberattack'];
-function isSports(t) { t = (t||'').toLowerCase(); return _SPORTS_KW.some(k => t.includes(k)); }
-function isGeo(t)    { t = (t||'').toLowerCase(); return _GEO_KW.some(k => t.includes(k)); }
+const _CRYPTO_KW = ['bitcoin', 'btc', 'ethereum', 'eth', 'solana', 'sol', 'xrp', 'ripple', 'dogecoin', 'doge', 'cardano', 'ada', 'polygon', 'matic', 'avalanche', 'avax', 'chainlink', 'link', 'polkadot', 'dot', 'litecoin', 'ltc', 'shiba', 'pepe', 'memecoin', 'meme coin', 'crypto', 'cryptocurrency', 'blockchain', 'defi', 'nft'];
+const _FINANCE_KW = ['stock', 's&p', 's&p 500', 'nasdaq', 'dow jones', 'treasury', 'bond', 'yield', 'inflation', 'gdp', 'recession', 'ipo', 'earnings', 'market cap', 'forex', 'oil price', 'gold price', 'interest rate', 'cpi', 'jobs report', 'unemployment'];
+const _TECH_KW = ['apple', 'google', 'microsoft', 'amazon', 'meta', 'nvidia', 'openai', 'chatgpt', 'ai ', 'artificial intelligence', 'spacex', 'tesla', 'semiconductor', 'chip'];
+const _CULTURE_KW = ['oscar', 'grammy', 'emmy', 'golden globe', 'box office', 'album', 'movie', 'film', 'tv show', 'reality tv', 'bachelor', 'celebrity', 'influencer', 'tiktok', 'youtube', 'spotify', 'netflix', 'disney'];
+function isSports(t)  { t = (t||'').toLowerCase(); return _SPORTS_KW.some(k => t.includes(k)); }
+function isGeo(t)     { t = (t||'').toLowerCase(); return _GEO_KW.some(k => t.includes(k)); }
+function isCrypto(t)  { t = (t||'').toLowerCase(); return _CRYPTO_KW.some(k => t.includes(k)); }
+function isFinance(t) { t = (t||'').toLowerCase(); return _FINANCE_KW.some(k => t.includes(k)); }
+function isTech(t)    { t = (t||'').toLowerCase(); return _TECH_KW.some(k => t.includes(k)); }
+function isCulture(t) { t = (t||'').toLowerCase(); return _CULTURE_KW.some(k => t.includes(k)); }
 function tagRow(el, d) {
+  const t = d.market_title;
   el.dataset.whale    = d.is_whale                                     ? '1' : '0';
-  el.dataset.geo      = (d.is_geopolitical ?? isGeo(d.market_title))   ? '1' : '0';
-  el.dataset.sports   = (d.is_sports       ?? isSports(d.market_title))? '1' : '0';
+  el.dataset.geo      = (d.is_geopolitical ?? isGeo(t))               ? '1' : '0';
+  el.dataset.sports   = (d.is_sports       ?? isSports(t))            ? '1' : '0';
   el.dataset.politics = d.is_politics ? '1' : '0';
-  el.dataset.crypto   = d.is_crypto   ? '1' : '0';
-  el.dataset.finance  = d.is_finance  ? '1' : '0';
-  el.dataset.tech     = d.is_tech     ? '1' : '0';
-  el.dataset.culture  = d.is_culture  ? '1' : '0';
+  el.dataset.crypto   = (d.is_crypto   ?? isCrypto(t))               ? '1' : '0';
+  el.dataset.finance  = (d.is_finance  ?? isFinance(t))              ? '1' : '0';
+  el.dataset.tech     = (d.is_tech     ?? isTech(t))                 ? '1' : '0';
+  el.dataset.culture  = (d.is_culture  ?? isCulture(t))             ? '1' : '0';
 }
 
 let flowCount = 0, whaleCount = 0;

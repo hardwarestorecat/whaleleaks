@@ -21,7 +21,7 @@ import config
 from db import database as db
 from dashboard import app as dashboard_app, broadcast, broadcast_flow, set_markets_count
 from alerts.models import WhaleAlert
-from utils.market_filter import is_geopolitical, is_sports
+from utils.market_filter import is_geopolitical, is_sports, is_crypto, is_finance, is_tech, is_culture
 from polymarket.listener import run as poly_run
 from polymarket.resolver import run as resolver_run
 from polymarket.market_cache import get_markets
@@ -72,13 +72,17 @@ async def _on_whale(alert: WhaleAlert) -> None:
         d["is_geopolitical"] = cached.get("is_geopolitical", False) or is_geopolitical(alert.market_title)
         d["is_sports"]       = cached.get("is_sports", False) or is_sports(alert.market_title)
         d["is_politics"]     = cached.get("is_politics", False)
-        d["is_crypto"]       = cached.get("is_crypto", False)
-        d["is_finance"]      = cached.get("is_finance", False)
-        d["is_tech"]         = cached.get("is_tech", False)
-        d["is_culture"]      = cached.get("is_culture", False)
+        d["is_crypto"]       = cached.get("is_crypto", False) or is_crypto(alert.market_title)
+        d["is_finance"]      = cached.get("is_finance", False) or is_finance(alert.market_title)
+        d["is_tech"]         = cached.get("is_tech", False) or is_tech(alert.market_title)
+        d["is_culture"]      = cached.get("is_culture", False) or is_culture(alert.market_title)
     else:
         d["is_geopolitical"] = is_geopolitical(alert.market_title)
         d["is_sports"]       = is_sports(alert.market_title)
+        d["is_crypto"]       = is_crypto(alert.market_title)
+        d["is_finance"]      = is_finance(alert.market_title)
+        d["is_tech"]         = is_tech(alert.market_title)
+        d["is_culture"]      = is_culture(alert.market_title)
     broadcast(d)
     await flow_store.push_whale(d)
 

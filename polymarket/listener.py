@@ -19,7 +19,7 @@ from alerts.models import WhaleAlert
 from alerts.dispatcher import dispatch
 from db import database as db
 from store import flow_store
-from utils.market_filter import is_geopolitical, is_sports, matched_keywords
+from utils.market_filter import is_geopolitical, is_sports, is_crypto, is_finance, is_tech, is_culture, matched_keywords
 
 log = logging.getLogger("polymarket.listener")
 
@@ -112,10 +112,10 @@ async def _handle(trade: dict, on_whale: WhaleCB | None, on_flow: FlowCB | None)
     geo      = (cached["is_geopolitical"] if cached else False) or is_geopolitical(title)
     sports   = (cached["is_sports"]       if cached else False) or is_sports(title)
     politics = cached.get("is_politics", False) if cached else False
-    crypto   = cached.get("is_crypto", False)   if cached else False
-    finance  = cached.get("is_finance", False)   if cached else False
-    tech     = cached.get("is_tech", False)      if cached else False
-    culture  = cached.get("is_culture", False)   if cached else False
+    crypto   = (cached.get("is_crypto", False)   if cached else False) or is_crypto(title)
+    finance  = (cached.get("is_finance", False)   if cached else False) or is_finance(title)
+    tech     = (cached.get("is_tech", False)      if cached else False) or is_tech(title)
+    culture  = (cached.get("is_culture", False)   if cached else False) or is_culture(title)
 
     # ── Dedup: skip entirely if we've seen this tx before ────────────────────
     if usd_value >= config.FLOW_THRESHOLD_USD:
