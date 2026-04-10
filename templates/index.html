@@ -201,8 +201,13 @@
 
   /* Live feed filter bar */
   /* Top bar: tags 20%, leaderboard 40%, whales 40% */
-  .top-bar { display: flex; border-bottom: 1px solid var(--border); background: var(--bg); flex-shrink: 0; height: 130px; }
-  .top-bar-tags { flex: 0 0 20%; padding: 6px 10px; overflow: hidden; }
+  .top-bar { display: flex; border-bottom: 1px solid var(--border); background: var(--bg); flex-shrink: 0; height: 170px; }
+  .top-bar-tags { flex: 0 0 20%; padding: 6px 10px; overflow: hidden; display: flex; flex-direction: column; gap: 4px; }
+  .top-bar-hot { flex: 1; overflow-y: auto; min-height: 0; }
+  .top-bar-hot-list { display: flex; flex-direction: column; gap: 1px; }
+  .hot-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; font-size: 11px; }
+  .hot-row .hot-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+  .hot-row .hot-vol { flex-shrink: 0; font-weight: 700; font-size: 10px; color: var(--muted); }
   .top-bar-section { flex: 0 0 40%; border-left: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
   .top-bar-label { padding: 4px 10px 2px; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; font-weight: 700; flex-shrink: 0; }
   .top-bar-scroll { overflow-y: auto; flex: 1; min-height: 0; }
@@ -426,6 +431,10 @@
         <button class="feed-filter-btn tech on"      id="ff-tech"     onclick="toggleFlowExclude('tech')">Tech</button>
         <button class="feed-filter-btn culture on"   id="ff-culture"  onclick="toggleFlowExclude('culture')">Culture</button>
       </div>
+      <div class="top-bar-hot">
+        <div class="top-bar-label">Highest Volume</div>
+        <div class="top-bar-hot-list" id="top-bar-hot"><span class="ab-placeholder">loading…</span></div>
+      </div>
     </div>
     <div class="top-bar-section">
       <div class="top-bar-label">Leaderboard <span class="badge" id="ldr-count">0</span> <span id="ldr-mode" style="font-size:9px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0"></span></div>
@@ -632,6 +641,16 @@ async function refreshToday() {
           <span class="ab-chip-vol">${fmt.usd(m.total_volume)}</span>
         </div>`;
       }).join('');
+      // Also populate top-bar hot markets
+      const hotEl = document.getElementById('top-bar-hot');
+      if (hotEl) {
+        hotEl.innerHTML = d.hot_markets.map(m =>
+          `<div class="hot-row">
+            <span class="hot-title" title="${m.market_title}">${m.market_title}</span>
+            <span class="hot-vol">${fmt.vol(m.total_volume)}</span>
+          </div>`
+        ).join('');
+      }
     } else {
       document.getElementById('ab-markets').innerHTML = '<span class="ab-placeholder">no trades yet today</span>';
     }
