@@ -52,7 +52,7 @@
   .panel { display: flex; flex-direction: column; border-right: 1px solid var(--border); min-height: 0; flex: 1; }
   .panel:last-child { border-right: none; }
   .panel.narrow  { flex: 0 0 260px; }
-  .panel.mobile-whale-panel { display: none; }
+  .panel.mobile-whale-panel, .panel.mobile-leaderboard-panel { display: none; }
   .panel-header { padding: 8px 14px; border-bottom: 1px solid var(--border); background: var(--surface); font-weight: 600; font-size: 11px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
   .panel-header .badge { background: var(--border); border-radius: 8px; padding: 1px 6px; font-size: 10px; }
   .sort-select { background: var(--bg); color: var(--muted); border: 1px solid var(--border); border-radius: 4px; font-size: 10px; padding: 2px 6px; cursor: pointer; text-transform: none; letter-spacing: 0; }
@@ -288,8 +288,8 @@
     #view-live .panel { display: none; }
     #view-live .panel.mobile-active { display: flex; flex: 1; min-height: 0; }
     .panel.narrow { flex: 1; }
-    .panel.mobile-whale-panel { display: none; }
-    .panel.mobile-whale-panel.mobile-active { display: flex; }
+    .panel.mobile-whale-panel, .panel.mobile-leaderboard-panel { display: none; }
+    .panel.mobile-whale-panel.mobile-active, .panel.mobile-leaderboard-panel.mobile-active { display: flex; }
 
     /* Hide column headers, mult, tags on mobile */
     .col-headers { display: none; }
@@ -431,7 +431,8 @@
   <div class="mobile-panel-tabs">
     <button class="mobile-panel-tab on" onclick="setMobilePanel(0)">Flow</button>
     <button class="mobile-panel-tab"   onclick="setMobilePanel(1)">Alerts</button>
-    <button class="mobile-panel-tab"   onclick="setMobilePanel(2)">Top Whales</button>
+    <button class="mobile-panel-tab"   onclick="setMobilePanel(2)">Leaderboard</button>
+    <button class="mobile-panel-tab"   onclick="setMobilePanel(3)">Top Whales</button>
   </div>
   <div class="panel-row" style="display:flex;flex:1;min-height:0">
   <div class="panel mobile-active">
@@ -471,6 +472,10 @@
       <span class="ch-spent">Spent</span>
     </div>
     <div class="panel-body" id="alert-feed"><div class="empty">No whales yet…</div></div>
+  </div>
+  <div class="panel narrow mobile-leaderboard-panel">
+    <div class="panel-header">Leaderboard</div>
+    <div class="panel-body" id="leaderboard-list-mobile"><div class="empty">Loading…</div></div>
   </div>
   <div class="panel narrow mobile-whale-panel">
     <div class="panel-header">Top Whales</div>
@@ -871,8 +876,14 @@ async function refreshLeaderboard() {
     const hdr = document.getElementById('ldr-mode');
     document.getElementById('ldr-count').textContent = data.length;
     if (hdr) hdr.textContent = mode === 'earners' ? 'by winnings' : 'by total spent';
-    if (!data.length) { el.innerHTML = '<div class="empty">Not enough data yet</div>'; return; }
-    el.innerHTML = data.map((e, i) => {
+    const elMobile = document.getElementById('leaderboard-list-mobile');
+    if (!data.length) {
+      const empty = '<div class="empty">Not enough data yet</div>';
+      el.innerHTML = empty;
+      if (elMobile) elMobile.innerHTML = empty;
+      return;
+    }
+    const html = data.map((e, i) => {
       const valLabel = mode === 'earners'
         ? `<span class="pos">+${fmt.usd(e.total_pnl_usd)}</span>`
         : fmt.usd(e.total_spent);
@@ -887,6 +898,8 @@ async function refreshLeaderboard() {
         </div>
       </div>`;
     }).join('');
+    el.innerHTML = html;
+    if (elMobile) elMobile.innerHTML = html;
   } catch(e) {}
 }
 setInterval(refreshLeaderboard, 15000);
