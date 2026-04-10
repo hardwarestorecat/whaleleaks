@@ -497,14 +497,14 @@ function isTech(t)    { t = (t||'').toLowerCase(); return _TECH_KW.some(k => t.i
 function isCulture(t) { t = (t||'').toLowerCase(); return _CULTURE_KW.some(k => t.includes(k)); }
 function tagRow(el, d) {
   const t = d.market_title;
-  el.dataset.whale    = d.is_whale                                     ? '1' : '0';
-  el.dataset.geo      = (d.is_geopolitical ?? isGeo(t))               ? '1' : '0';
-  el.dataset.sports   = (d.is_sports       ?? isSports(t))            ? '1' : '0';
-  el.dataset.politics = d.is_politics ? '1' : '0';
-  el.dataset.crypto   = (d.is_crypto   ?? isCrypto(t))               ? '1' : '0';
-  el.dataset.finance  = (d.is_finance  ?? isFinance(t))              ? '1' : '0';
-  el.dataset.tech     = (d.is_tech     ?? isTech(t))                 ? '1' : '0';
-  el.dataset.culture  = (d.is_culture  ?? isCulture(t))             ? '1' : '0';
+  el.dataset.whale    = d.is_whale                          ? '1' : '0';
+  el.dataset.geo      = (d.is_geopolitical || isGeo(t))     ? '1' : '0';
+  el.dataset.sports   = (d.is_sports       || isSports(t))  ? '1' : '0';
+  el.dataset.politics = d.is_politics                        ? '1' : '0';
+  el.dataset.crypto   = (d.is_crypto   || isCrypto(t))      ? '1' : '0';
+  el.dataset.finance  = (d.is_finance  || isFinance(t))     ? '1' : '0';
+  el.dataset.tech     = (d.is_tech     || isTech(t))        ? '1' : '0';
+  el.dataset.culture  = (d.is_culture  || isCulture(t))    ? '1' : '0';
 }
 
 let flowCount = 0, whaleCount = 0;
