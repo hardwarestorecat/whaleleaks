@@ -32,16 +32,17 @@ from db import database as db
 
 log = logging.getLogger("polymarket.resolver")
 
-POLL_INTERVAL = 3600   # check every hour
+POLL_INTERVAL = 600   # check every 10 minutes
 
 
 async def run() -> None:
     """Run forever; poll for resolved markets on interval."""
+    log.warning("Resolver started — polling every %ds", POLL_INTERVAL)
     while True:
         try:
             await _resolve_pending()
         except Exception as exc:
-            log.error("Resolver error: %s", exc)
+            log.error("Resolver error: %s", exc, exc_info=True)
         await asyncio.sleep(POLL_INTERVAL)
 
 

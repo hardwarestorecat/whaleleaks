@@ -8,11 +8,14 @@ fills           — every individual whale fill
 market_outcomes — resolved market cache (avoids redundant API calls)
 """
 from __future__ import annotations
+import logging
 import os
 import sqlite3
 import threading
 from contextlib import contextmanager
 from pathlib import Path
+
+log = logging.getLogger("database")
 
 DB_PATH = Path(os.getenv("DB_PATH", "whaleleaks.db"))
 MIN_BET_USD = 500.0   # only count bets >= this for win-rate / leaderboard
@@ -75,7 +78,6 @@ def init() -> None:
         CREATE INDEX IF NOT EXISTS idx_fills_address      ON fills(address);
         CREATE INDEX IF NOT EXISTS idx_fills_addr_ts     ON fills(address, ts DESC);
         CREATE INDEX IF NOT EXISTS idx_fills_condition    ON fills(condition_id);
-        CREATE INDEX IF NOT EXISTS idx_fills_unresolved   ON fills(condition_id) WHERE outcome IS NULL AND trade_side = 'BUY';
 
         CREATE TABLE IF NOT EXISTS market_outcomes (
             condition_id    TEXT PRIMARY KEY,
@@ -123,6 +125,32 @@ def init() -> None:
     if "trade_side" not in cols:
         conn.execute("ALTER TABLE fills ADD COLUMN trade_side TEXT NOT NULL DEFAULT 'BUY'")
         conn.commit()
+        log.info("Migrated: added trade_side column to fills")
+
+    # Create positions table if missing (may have failed before trade_side migration)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS positions (
+            address      TEXT NOT NULL,
+            condition_id TEXT NOT NULL,
+            token_side   TEXT NOT NULL,
+            quantity     REAL NOT NULL DEFAULT 0,
+            avg_cost     REAL NOT NULL DEFAULT 0,
+            total_cost   REAL NOT NULL DEFAULT 0,
+            PRIMARY KEY (address, condition_id, token_side)
+        )
+    """)
+    conn.commit()
+
+    # Create partial index on trade_side (safe now that column exists)
+    idx = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='index' AND name='idx_fills_unresolved'"
+    ).fetchone()
+    if not idx:
+        conn.execute(
+            "CREATE INDEX idx_fills_unresolved ON fills(condition_id) WHERE outcome IS NULL AND trade_side = 'BUY'"
+        )
+        conn.commit()
+        log.info("Created idx_fills_unresolved index")
 
 
 # ─── Position tracking ────────────────────────────────────────────────────────
