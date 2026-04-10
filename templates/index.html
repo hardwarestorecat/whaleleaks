@@ -66,6 +66,15 @@
   .new { animation: newflash .9s ease forwards; }
 
   /* Order flow */
+  /* Column headers */
+  .col-headers { display: flex; align-items: center; gap: 10px; padding: 4px 14px; border-bottom: 1px solid var(--border); background: var(--surface); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; font-weight: 600; flex-shrink: 0; }
+  .ch-side { width: 54px; flex-shrink: 0; text-align: center; }
+  .ch-market { flex: 1; min-width: 0; }
+  .ch-spent { width: 80px; flex-shrink: 0; text-align: right; }
+  .ch-mult { width: 50px; flex-shrink: 0; text-align: center; }
+  .ch-profit { width: 80px; flex-shrink: 0; text-align: right; }
+  .ch-time { width: 120px; flex-shrink: 0; text-align: right; }
+
   .flow-row { padding: 8px 14px; border-bottom: 1px solid rgba(48,54,61,.5); display: flex; align-items: flex-start; gap: 10px; font-size: 14px; transition: background .1s; }
   .flow-row.whale-hl { background: rgba(88,166,255,.06); }
   .flow-row.geo-hl { border-left: 2px solid var(--blue); }
@@ -83,37 +92,47 @@
 
   .flow-body { flex: 1; min-width: 0; }
   .flow-market { white-space: normal; word-break: break-word; line-height: 1.3; font-size: 14px; }
-  .flow-meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
-  .flow-profit { flex-shrink: 0; text-align: right; min-width: 80px; }
-  .flow-profit-amount { font-size: 16px; font-weight: 800; color: #3fb950; line-height: 1.1; }
-  .flow-profit-mult { font-size: 11px; color: var(--muted); }
-  .flow-right { text-align: right; flex-shrink: 0; min-width: 80px; }
+  .flow-spent { text-align: right; flex-shrink: 0; width: 80px; }
   .flow-usd { font-weight: 700; font-size: 15px; }
   .flow-usd.whale { color: var(--blue); }
-  .flow-usd.big   { color: var(--blue); }
-  .flow-ts { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .whale-tag { font-size: 10px; background: rgba(88,166,255,.15); color: var(--blue); border-radius: 3px; padding: 2px 5px; font-weight: 700; flex-shrink: 0; }
-  .geo-tag  { font-size: 10px; background: rgba(88,166,255,.15); color: var(--blue); border-radius: 3px; padding: 2px 5px; font-weight: 700; flex-shrink: 0; }
+  .flow-usd.big   { color: var(--text); }
+  .flow-mult { width: 50px; flex-shrink: 0; text-align: center; font-size: 12px; color: var(--muted); font-weight: 600; }
+  .flow-profit { flex-shrink: 0; text-align: right; width: 80px; }
+  .flow-profit-amount { font-size: 16px; font-weight: 800; color: #3fb950; line-height: 1.1; }
+  .flow-time { text-align: right; flex-shrink: 0; width: 120px; }
+  .flow-ts { font-size: 12px; color: var(--muted); }
+  .flow-addr { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .cat-tag { font-size: 10px; border-radius: 3px; padding: 2px 5px; font-weight: 700; flex-shrink: 0; display: inline-block; }
+  .cat-tag.whale    { background: rgba(88,166,255,.15);  color: #58a6ff; }
+  .cat-tag.geo      { background: rgba(255,100,100,.12); color: #ff6464; }
+  .cat-tag.politics { background: rgba(192,132,252,.12); color: #c084fc; }
+  .cat-tag.sports   { background: rgba(52,211,153,.12);  color: #34d399; }
+  .cat-tag.crypto   { background: rgba(251,191,36,.12);  color: #fbbf24; }
+  .cat-tag.finance  { background: rgba(244,162,97,.12);  color: #f4a261; }
+  .cat-tag.tech     { background: rgba(56,189,248,.12);  color: #38bdf8; }
+  .cat-tag.culture  { background: rgba(244,114,182,.12); color: #f472b6; }
 
   /* Whale alerts */
-  .alert-item { padding: 10px 14px; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 30px 1fr auto auto; gap: 10px; align-items: start; }
+  .alert-item { padding: 8px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 10px; }
   .alert-item:hover { background: rgba(255,255,255,.02); }
-  .side-badge { width: 30px; height: 30px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .alert-side { width: 54px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .side-badge { width: 54px; text-align: center; border-radius: 4px; font-size: 11px; font-weight: 800; padding: 3px 3px; flex-shrink: 0; }
   .side-badge.yes { background: rgba(63,185,80,.15); color: var(--yes); }
   .side-badge.no  { background: rgba(248,81,73,.15); color: var(--no); }
   .side-badge.unknown { background: rgba(139,148,158,.1); color: var(--muted); }
+  .alert-body { flex: 1; min-width: 0; }
   .alert-market { font-weight: 600; font-size: 14px; line-height: 1.3; }
-  .alert-meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
-  .alert-whale { margin-top: 3px; font-size: 12px; display: flex; align-items: center; gap: 5px; }
   .addr { font-family: monospace; font-size: 13px; color: var(--purple); }
-  .alert-profit { text-align: right; }
-  .alert-profit-amount { font-size: 18px; font-weight: 800; color: #3fb950; line-height: 1.1; }
-  .alert-profit-mult { font-size: 11px; color: var(--muted); }
-  .alert-right { text-align: right; }
+  .alert-spent { text-align: right; flex-shrink: 0; width: 80px; }
   .alert-usd { font-size: 16px; font-weight: 700; color: var(--blue); }
-  .alert-ts { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .alert-mult { width: 50px; flex-shrink: 0; text-align: center; font-size: 12px; color: var(--muted); font-weight: 600; }
+  .alert-profit { text-align: right; flex-shrink: 0; width: 80px; }
+  .alert-profit-amount { font-size: 18px; font-weight: 800; color: #3fb950; line-height: 1.1; }
+  .alert-time { text-align: right; flex-shrink: 0; width: 120px; }
+  .alert-ts { font-size: 12px; color: var(--muted); }
+  .alert-addr { font-size: 11px; color: var(--muted); margin-top: 1px; }
   .wr-pill { display: inline-flex; padding: 2px 5px; border-radius: 3px; font-size: 10px; font-weight: 700; }
-  .wr-pill.high { background: rgba(88,166,255,.15); color: var(--blue); }
+  .wr-pill.high { background: rgba(88,166,255,.15); color: #58a6ff; }
   .wr-pill.mid  { background: rgba(88,166,255,.12); color: var(--blue); }
   .wr-pill.low  { background: rgba(139,148,158,.1);  color: var(--muted); }
   .wr-pill.new  { background: rgba(188,140,255,.1);  color: var(--purple); }
@@ -161,14 +180,14 @@
   .profit-value { font-size: 13px; font-weight: 700; color: #3fb950; }
   .profit-mult { font-size: 10px; color: var(--muted); margin-left: 4px; }
   .cat-badge { font-size: 8px; border-radius: 3px; padding: 1px 4px; font-weight: 700; flex-shrink: 0; min-width: 34px; text-align: center; white-space: nowrap; }
-  .cat-badge.geo { background: rgba(88,166,255,.15); color: var(--blue); }
-  .cat-badge.pol { background: rgba(187,128,255,.15); color: #bb80ff; }
-  .cat-badge.spt { background: rgba(63,185,80,.15); color: #3fb950; }
-  .cat-badge.cry { background: rgba(255,166,0,.15); color: #ffa600; }
-  .cat-badge.fin { background: rgba(255,215,0,.15); color: #d4a800; }
-  .cat-badge.tch { background: rgba(0,200,200,.15); color: #00c8c8; }
-  .cat-badge.cul { background: rgba(255,105,180,.15); color: #ff69b4; }
-  .geo-badge { font-size: 8px; background: rgba(88,166,255,.15); color: var(--blue); border-radius: 3px; padding: 1px 4px; font-weight: 700; flex-shrink: 0; min-width: 34px; text-align: center; }
+  .cat-badge.geo { background: rgba(255,100,100,.12); color: #ff6464; }
+  .cat-badge.pol { background: rgba(192,132,252,.12); color: #c084fc; }
+  .cat-badge.spt { background: rgba(52,211,153,.12);  color: #34d399; }
+  .cat-badge.cry { background: rgba(251,191,36,.12);  color: #fbbf24; }
+  .cat-badge.fin { background: rgba(244,162,97,.12);  color: #f4a261; }
+  .cat-badge.tch { background: rgba(56,189,248,.12);  color: #38bdf8; }
+  .cat-badge.cul { background: rgba(244,114,182,.12); color: #f472b6; }
+  .geo-badge { font-size: 8px; background: rgba(255,100,100,.12); color: #ff6464; border-radius: 3px; padding: 1px 4px; font-weight: 700; flex-shrink: 0; min-width: 34px; text-align: center; }
   .geo-spacer { min-width: 34px; flex-shrink: 0; }
 
   /* Load more sentinel */
@@ -185,14 +204,14 @@
   .feed-filter-btn { padding: 3px 9px; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 10px; cursor: pointer; font-weight: 600; letter-spacing: .3px; }
   .feed-filter-btn:hover { color: var(--text); }
   .feed-filter-btn.on { color: var(--blue); border-color: var(--blue); background: rgba(88,166,255,.08); }
-  .feed-filter-btn.on.whale { color: var(--blue); border-color: var(--blue); background: rgba(88,166,255,.08); }
-  .feed-filter-btn.on.geo   { color: var(--blue); border-color: var(--blue); background: rgba(88,166,255,.08); }
-  .feed-filter-btn.on.sports { color: var(--purple); border-color: var(--purple); background: rgba(188,140,255,.08); }
-  .feed-filter-btn.on.politics { color: #bb80ff; border-color: #bb80ff; background: rgba(187,128,255,.08); }
-  .feed-filter-btn.on.crypto  { color: #ffa600; border-color: #ffa600; background: rgba(255,166,0,.08); }
-  .feed-filter-btn.on.finance { color: #d4a800; border-color: #d4a800; background: rgba(255,215,0,.08); }
-  .feed-filter-btn.on.tech    { color: #00c8c8; border-color: #00c8c8; background: rgba(0,200,200,.08); }
-  .feed-filter-btn.on.culture { color: #ff69b4; border-color: #ff69b4; background: rgba(255,105,180,.08); }
+  .feed-filter-btn.on.whale    { color: #58a6ff; border-color: #58a6ff; background: rgba(88,166,255,.08); }
+  .feed-filter-btn.on.geo      { color: #ff6464; border-color: #ff6464; background: rgba(255,100,100,.08); }
+  .feed-filter-btn.on.politics { color: #c084fc; border-color: #c084fc; background: rgba(192,132,252,.08); }
+  .feed-filter-btn.on.sports   { color: #34d399; border-color: #34d399; background: rgba(52,211,153,.08); }
+  .feed-filter-btn.on.crypto   { color: #fbbf24; border-color: #fbbf24; background: rgba(251,191,36,.08); }
+  .feed-filter-btn.on.finance  { color: #f4a261; border-color: #f4a261; background: rgba(244,162,97,.08); }
+  .feed-filter-btn.on.tech     { color: #38bdf8; border-color: #38bdf8; background: rgba(56,189,248,.08); }
+  .feed-filter-btn.on.culture  { color: #f472b6; border-color: #f472b6; background: rgba(244,114,182,.08); }
 
   /* Sortable market column headers */
   .mkt-col-sortable { cursor: pointer; user-select: none; }
@@ -271,27 +290,36 @@
     .panel.mobile-whale-panel { display: none; }
     .panel.mobile-whale-panel.mobile-active { display: flex; }
 
-    /* Flow rows: tighter, compact profit */
+    /* Hide column headers and tags on mobile */
+    .col-headers { display: none; }
+    .cat-tag { font-size: 8px; padding: 1px 3px; }
+    .flow-mult, .alert-mult { display: none; }
+
+    /* Flow rows: tighter */
     .flow-row { padding: 6px 10px; gap: 6px; flex-wrap: wrap; font-size: 13px; }
-    .flow-profit { min-width: auto; }
+    .flow-profit { width: auto; min-width: auto; }
     .flow-profit-amount { font-size: 13px; }
-    .flow-profit-mult { font-size: 10px; }
     .flow-side { width: 44px; }
     .flow-side-badge { width: 44px; font-size: 10px; }
-    .flow-right { min-width: 58px; }
+    .flow-spent { width: auto; min-width: 58px; }
     .flow-usd { font-size: 13px; }
     .flow-market { font-size: 12px; }
-    .flow-meta { font-size: 10px; }
+    .flow-time { width: auto; min-width: 58px; }
     .flow-ts { font-size: 10px; }
+    .flow-addr { font-size: 9px; }
 
-    /* Alert items: compress grid, keep profit visible */
-    .alert-item { grid-template-columns: 26px 1fr auto auto; gap: 6px; padding: 8px 10px; }
-    .alert-profit-amount { font-size: 14px; }
-    .alert-profit-mult { font-size: 10px; }
-    .side-badge { width: 26px; height: 26px; font-size: 9px; border-radius: 4px; }
+    /* Alert items */
+    .alert-item { gap: 6px; padding: 6px 10px; flex-wrap: wrap; }
+    .alert-side { width: 44px; }
+    .side-badge { width: 44px; font-size: 10px; }
+    .alert-profit { width: auto; min-width: auto; }
+    .alert-profit-amount { font-size: 13px; }
     .alert-market { font-size: 12px; }
+    .alert-spent { width: auto; min-width: 58px; }
     .alert-usd { font-size: 14px; }
+    .alert-time { width: auto; min-width: 58px; }
     .alert-ts { font-size: 10px; }
+    .alert-addr { font-size: 9px; }
     .addr { font-size: 12px; }
 
     /* Leaderboard rows */
@@ -388,23 +416,41 @@
   <div class="panel-row" style="display:flex;flex:1;min-height:0">
   <div class="panel mobile-active">
     <div class="panel-header">
-      <span>Order Flow ≥$500 <span class="badge" id="flow-count">0</span></span>
-      <select class="sort-select" id="flow-sort" onchange="sortFlowFeed()">
-        <option value="latest">Latest</option>
-        <option value="usd">Amount</option>
-        <option value="profit">Winnings</option>
-      </select>
+      <span>Order Flow ≥$500 <span class="badge" id="flow-count">0</span>
+        <select class="sort-select" id="flow-sort" onchange="sortFlowFeed()">
+          <option value="latest">Latest</option>
+          <option value="usd">Amount</option>
+          <option value="profit">Winnings</option>
+        </select>
+      </span>
+    </div>
+    <div class="col-headers flow-cols">
+      <span class="ch-side">Side</span>
+      <span class="ch-market">Market</span>
+      <span class="ch-spent">Spent</span>
+      <span class="ch-mult">Mult</span>
+      <span class="ch-profit">Winnings</span>
+      <span class="ch-time">Time / Address</span>
     </div>
     <div class="panel-body" id="flow-feed"><div class="empty">Waiting for orders…</div></div>
   </div>
   <div class="panel">
     <div class="panel-header">
-      <span>Whale Alerts ≥$3k spend / +$1k profit <span class="badge" id="whale-count">0</span></span>
-      <select class="sort-select" id="whale-sort" onchange="sortWhaleFeed()">
-        <option value="latest">Latest</option>
-        <option value="usd">Amount</option>
-        <option value="profit">Winnings</option>
-      </select>
+      <span>Whale Alerts ≥$3k spend / +$1k profit <span class="badge" id="whale-count">0</span>
+        <select class="sort-select" id="whale-sort" onchange="sortWhaleFeed()">
+          <option value="latest">Latest</option>
+          <option value="usd">Amount</option>
+          <option value="profit">Winnings</option>
+        </select>
+      </span>
+    </div>
+    <div class="col-headers alert-cols">
+      <span class="ch-side">Side</span>
+      <span class="ch-market">Market</span>
+      <span class="ch-spent">Spent</span>
+      <span class="ch-mult">Mult</span>
+      <span class="ch-profit">Winnings</span>
+      <span class="ch-time">Time / Address</span>
     </div>
     <div class="panel-body" id="alert-feed"><div class="empty">No whales yet…</div></div>
   </div>
@@ -849,14 +895,23 @@ function buildFlowRowEl(row) {
     </div>
     <div class="flow-body">
       <div class="flow-market">${titleHtml}</div>
-      <div class="flow-meta">${fmt.addr(row.address)}</div>
     </div>
-    ${row.is_whale ? '<span class="whale-tag">WHALE</span>' : ''}
-    ${row.is_geopolitical && !row.is_whale ? '<span class="geo-tag">GEO</span>' : ''}
-    ${rProfit ? `<div class="flow-profit"><div class="flow-profit-amount">+${fmt.vol(row.potential_profit)}</div><div class="flow-profit-mult">${rMult}</div></div>` : ''}
-    <div class="flow-right">
+    ${row.is_whale ? '<span class="cat-tag whale">WHALE</span>' : ''}
+    ${row.is_geopolitical ? '<span class="cat-tag geo">GEO</span>' : ''}
+    ${row.is_politics ? '<span class="cat-tag politics">POL</span>' : ''}
+    ${row.is_sports ? '<span class="cat-tag sports">SPORT</span>' : ''}
+    ${row.is_crypto ? '<span class="cat-tag crypto">CRYPTO</span>' : ''}
+    ${row.is_finance ? '<span class="cat-tag finance">FIN</span>' : ''}
+    ${row.is_tech ? '<span class="cat-tag tech">TECH</span>' : ''}
+    ${row.is_culture ? '<span class="cat-tag culture">CULT</span>' : ''}
+    <div class="flow-spent">
       <div class="flow-usd ${usdCls}">${fmt.usd(row.usd_value)}</div>
+    </div>
+    <div class="flow-mult">${rMult || ''}</div>
+    ${rProfit ? `<div class="flow-profit"><div class="flow-profit-amount">+${fmt.vol(row.potential_profit)}</div></div>` : '<div class="flow-profit"></div>'}
+    <div class="flow-time">
       <div class="flow-ts">${fmt.ts(row.ts)}</div>
+      <div class="flow-addr">${fmt.addr(row.address)}</div>
     </div>`;
   return div;
 }
@@ -1071,17 +1126,32 @@ function buildAlertEl(a, isNew=false) {
   tagRow(div, {...a, is_whale: true, market_title: a.market_title || a.market_id});
   const profit = a.potential_profit != null ? fmt.usd(a.potential_profit) : null;
   const mult   = a.return_multiple  != null ? a.return_multiple.toFixed(2) + '×' : null;
+  const titleHtml = (() => { const u = polyUrl(a.market_id); const t = a.market_title||a.market_id; return u ? `<a class="pm-link" href="${u}" target="_blank" rel="noopener">${t}</a>` : t; })();
+  const addrHtml = a.whale_address ? `${fmt.addr(a.whale_address)}${pill}` : '';
   div.innerHTML = `
-    <div class="side-badge ${side}">${side==='yes'?'YES':side==='no'?'NO':'?'}</div>
-    <div>
-      <div class="alert-market">${(() => { const u = polyUrl(a.market_id); const t = a.market_title||a.market_id; return u ? `<a class="pm-link" href="${u}" target="_blank" rel="noopener">${t}</a>` : t; })()}</div>
-      <div class="alert-meta">${a.price_cents}¢ / share</div>
-      ${a.whale_address?`<div class="alert-whale">${fmt.addr(a.whale_address)}${pill}</div>`:''}
+    <div class="alert-side">
+      <div class="side-badge ${side}">${side==='yes'?'YES':side==='no'?'NO':'?'}</div>
+      <div class="flow-odds ${side==='yes'?'yes':side==='no'?'no':''}">${a.price_cents}¢</div>
     </div>
-    ${profit ? `<div class="alert-profit"><div class="alert-profit-amount">+${fmt.vol(a.potential_profit)}</div><div class="alert-profit-mult">${mult}</div></div>` : '<div></div>'}
-    <div class="alert-right">
+    <div class="alert-body">
+      <div class="alert-market">${titleHtml}</div>
+    </div>
+    <span class="cat-tag whale">WHALE</span>
+    ${a.is_geopolitical ? '<span class="cat-tag geo">GEO</span>' : ''}
+    ${a.is_politics ? '<span class="cat-tag politics">POL</span>' : ''}
+    ${a.is_sports ? '<span class="cat-tag sports">SPORT</span>' : ''}
+    ${a.is_crypto ? '<span class="cat-tag crypto">CRYPTO</span>' : ''}
+    ${a.is_finance ? '<span class="cat-tag finance">FIN</span>' : ''}
+    ${a.is_tech ? '<span class="cat-tag tech">TECH</span>' : ''}
+    ${a.is_culture ? '<span class="cat-tag culture">CULT</span>' : ''}
+    <div class="alert-spent">
       <div class="alert-usd">${fmt.usd(a.usd_value)}</div>
+    </div>
+    <div class="alert-mult">${mult || ''}</div>
+    ${profit ? `<div class="alert-profit"><div class="alert-profit-amount">+${fmt.vol(a.potential_profit)}</div></div>` : '<div class="alert-profit"></div>'}
+    <div class="alert-time">
       <div class="alert-ts">${fmt.ts(a.ts||new Date().toISOString())}</div>
+      <div class="alert-addr">${addrHtml}</div>
     </div>`;
   return div;
 }
