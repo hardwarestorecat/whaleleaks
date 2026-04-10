@@ -139,13 +139,16 @@
   .wr-pill.new  { background: rgba(188,140,255,.1);  color: var(--purple); }
 
   /* Leaderboard */
-  .lb-row { padding: 9px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+  .lb-row { padding: 6px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 6px; }
   .lb-row:hover { background: rgba(255,255,255,.02); }
-  .lb-rank { width: 18px; text-align: center; color: var(--muted); font-size: 13px; flex-shrink: 0; }
+  .lb-row.lb-header { padding: 4px 10px; border-bottom: 1px solid var(--border); background: var(--surface); position: sticky; top: 0; }
+  .lb-row.lb-header:hover { background: var(--surface); }
+  .lb-rank { width: 18px; text-align: center; color: var(--muted); font-size: 12px; flex-shrink: 0; }
   .lb-rank.top { color: var(--blue); font-weight: 700; }
   .lb-info { flex: 1; min-width: 0; }
-  .lb-addr { font-family: monospace; font-size: 13px; color: var(--purple); }
-  .lb-stats { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .lb-addr { font-family: monospace; font-size: 12px; color: var(--purple); }
+  .lb-stats { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .lb-col { width: 70px; flex-shrink: 0; }
   .lb-right { text-align: right; }
   .lb-wr { font-size: 14px; font-weight: 700; }
   .lb-pnl { font-size: 11px; margin-top: 1px; }
@@ -887,19 +890,26 @@ async function refreshLeaderboard() {
       if (elMobile) elMobile.innerHTML = empty;
       return;
     }
-    const html = data.map((e, i) => {
-      const valLabel = mode === 'earners'
-        ? `<span class="pos">+${fmt.usd(e.total_pnl_usd)}</span>`
-        : fmt.usd(e.total_spent);
+    const colHeader = `<div class="lb-row lb-header">
+      <div class="lb-rank"></div>
+      <div class="lb-info" style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Address</div>
+      <div class="lb-col" style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:right">Spent</div>
+      <div class="lb-col" style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:right">Wins</div>
+      <div class="lb-col" style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:right">Last Bet</div>
+    </div>`;
+    const html = colHeader + data.map((e, i) => {
+      const wins = e.potential_winnings != null && e.potential_winnings > 0
+        ? `<span class="pos">+${fmt.vol(e.potential_winnings)}</span>` : '—';
+      const lastBet = e.last_bet_ts ? fmt.ts(e.last_bet_ts) : '—';
       return `<div class="lb-row">
         <div class="lb-rank ${i<3?'top':''}">${i+1}</div>
         <div class="lb-info">
           <div class="lb-addr">${fmt.addr(e.address)}</div>
           <div class="lb-stats">${e.total_fills} bets</div>
         </div>
-        <div class="lb-right">
-          <div class="lb-pnl">${valLabel}</div>
-        </div>
+        <div class="lb-col" style="text-align:right;font-weight:600;font-size:12px">${fmt.vol(e.total_spent)}</div>
+        <div class="lb-col" style="text-align:right;font-size:12px">${wins}</div>
+        <div class="lb-col" style="text-align:right;font-size:10px;color:var(--muted)">${lastBet}</div>
       </div>`;
     }).join('');
     el.innerHTML = html;

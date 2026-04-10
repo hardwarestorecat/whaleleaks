@@ -406,6 +406,8 @@ def get_top_spenders(limit: int = 20) -> list[dict]:
         """SELECT address,
                   COUNT(*)            AS total_fills,
                   SUM(usd_value)      AS total_spent,
+                  SUM(quantity - usd_value) AS potential_winnings,
+                  MAX(ts)             AS last_bet_ts,
                   SUM(CASE WHEN pnl_usd IS NOT NULL THEN pnl_usd ELSE 0 END) AS total_pnl_usd,
                   SUM(CASE WHEN outcome = 'win' THEN 1 ELSE 0 END) AS wins,
                   SUM(CASE WHEN outcome IS NOT NULL AND outcome NOT IN ('push','') THEN 1 ELSE 0 END) AS resolved_fills
