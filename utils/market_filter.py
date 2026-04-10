@@ -10,7 +10,7 @@ _SPORTS_KEYWORDS = [
     "nfl", "nba", "nhl", "mlb", "nascar", "mls", "ufc", "pga",
     "fifa", "world cup", "champions league", "premier league", "la liga",
     "bundesliga", "serie a", "ligue 1", "super bowl", "playoffs",
-    "grand prix", "formula 1",
+    "grand prix", "formula 1", " f1 ", " f1?",
     # Sports betting terms
     "spread", "over/under", "moneyline", "money line", "point total",
     "game total", "match winner", "to win", "mvp", "rushing yards",
