@@ -365,10 +365,11 @@
     /* Address modal: centered on mobile */
     #addr-modal { align-items: center; }
     #addr-modal-box { width: 95vw; max-height: 85vh; border-radius: 10px; }
-    #addr-modal-body { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .fill-row { min-width: 480px; font-size: 10px; padding: 6px 12px; gap: 6px; }
-    .fill-row.header { font-size: 9px; }
-    #addr-modal-title { font-size: 11px; }
+    #addr-modal-body { overflow-x: hidden; }
+    .fill-row { min-width: 0; font-size: 10px; padding: 5px 8px; gap: 3px;
+      grid-template-columns: 60px 1fr 30px 44px 50px 44px 44px; }
+    .fill-row.header { font-size: 8px; }
+    #addr-modal-title { font-size: 11px; word-break: break-all; }
     #addr-modal-stats { font-size: 10px; }
   }
 
