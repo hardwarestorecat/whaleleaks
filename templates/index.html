@@ -68,12 +68,12 @@
   /* Order flow */
   /* Column headers */
   .col-headers { display: flex; align-items: center; gap: 10px; padding: 4px 14px; border-bottom: 1px solid var(--border); background: var(--surface); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; font-weight: 600; flex-shrink: 0; }
+  .ch-time { width: 120px; flex-shrink: 0; }
   .ch-side { width: 54px; flex-shrink: 0; text-align: center; }
   .ch-market { flex: 1; min-width: 0; }
-  .ch-spent { width: 80px; flex-shrink: 0; text-align: right; }
   .ch-mult { width: 50px; flex-shrink: 0; text-align: center; }
   .ch-profit { width: 80px; flex-shrink: 0; text-align: right; }
-  .ch-time { width: 120px; flex-shrink: 0; text-align: right; }
+  .ch-spent { width: 80px; flex-shrink: 0; text-align: right; }
   .ch-sortable { cursor: pointer; user-select: none; }
   .ch-sortable:hover { color: var(--text); }
   .ch-sortable .sort-arrow { font-size: 9px; margin-left: 2px; }
@@ -93,6 +93,9 @@
   .flow-odds.no      { color: var(--no); }
   .flow-odds.outcome { color: var(--purple); }
 
+  .flow-time { flex-shrink: 0; width: 120px; }
+  .flow-ts { font-size: 12px; color: var(--muted); }
+  .flow-addr { font-size: 11px; color: var(--muted); margin-top: 1px; }
   .flow-body { flex: 1; min-width: 0; }
   .flow-market { white-space: normal; word-break: break-word; line-height: 1.3; font-size: 14px; }
   .flow-spent { text-align: right; flex-shrink: 0; width: 80px; }
@@ -102,9 +105,6 @@
   .flow-mult { width: 50px; flex-shrink: 0; text-align: center; font-size: 12px; color: var(--muted); font-weight: 600; }
   .flow-profit { flex-shrink: 0; text-align: right; width: 80px; }
   .flow-profit-amount { font-size: 16px; font-weight: 800; color: #3fb950; line-height: 1.1; }
-  .flow-time { text-align: right; flex-shrink: 0; width: 120px; }
-  .flow-ts { font-size: 12px; color: var(--muted); }
-  .flow-addr { font-size: 11px; color: var(--muted); margin-top: 1px; }
   .cat-tag { font-size: 10px; border-radius: 3px; padding: 2px 5px; font-weight: 700; flex-shrink: 0; display: inline-block; }
   .cat-tag.whale    { background: rgba(88,166,255,.15);  color: #58a6ff; }
   .cat-tag.geo      { background: rgba(255,100,100,.12); color: #ff6464; }
@@ -118,6 +118,9 @@
   /* Whale alerts */
   .alert-item { padding: 8px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 10px; }
   .alert-item:hover { background: rgba(255,255,255,.02); }
+  .alert-time { flex-shrink: 0; width: 120px; }
+  .alert-ts { font-size: 12px; color: var(--muted); }
+  .alert-addr { font-size: 11px; color: var(--muted); margin-top: 1px; }
   .alert-side { width: 54px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
   .side-badge { width: 54px; text-align: center; border-radius: 4px; font-size: 11px; font-weight: 800; padding: 3px 3px; flex-shrink: 0; }
   .side-badge.yes { background: rgba(63,185,80,.15); color: var(--yes); }
@@ -126,14 +129,11 @@
   .alert-body { flex: 1; min-width: 0; }
   .alert-market { font-weight: 600; font-size: 14px; line-height: 1.3; }
   .addr { font-family: monospace; font-size: 13px; color: var(--purple); }
-  .alert-spent { text-align: right; flex-shrink: 0; width: 80px; }
-  .alert-usd { font-size: 16px; font-weight: 700; color: var(--blue); }
   .alert-mult { width: 50px; flex-shrink: 0; text-align: center; font-size: 12px; color: var(--muted); font-weight: 600; }
   .alert-profit { text-align: right; flex-shrink: 0; width: 80px; }
   .alert-profit-amount { font-size: 18px; font-weight: 800; color: #3fb950; line-height: 1.1; }
-  .alert-time { text-align: right; flex-shrink: 0; width: 120px; }
-  .alert-ts { font-size: 12px; color: var(--muted); }
-  .alert-addr { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .alert-spent { text-align: right; flex-shrink: 0; width: 80px; }
+  .alert-usd { font-size: 16px; font-weight: 700; color: var(--blue); }
   .wr-pill { display: inline-flex; padding: 2px 5px; border-radius: 3px; font-size: 10px; font-weight: 700; }
   .wr-pill.high { background: rgba(88,166,255,.15); color: #58a6ff; }
   .wr-pill.mid  { background: rgba(88,166,255,.12); color: var(--blue); }
@@ -448,9 +448,9 @@
       <span>Order Flow ≥$500 <span class="badge" id="flow-count">0</span></span>
     </div>
     <div class="col-headers flow-cols">
+      <span class="ch-time ch-sortable" onclick="setFeedSort('flow','latest')">Time / Address <span class="sort-arrow" id="flow-sort-latest">↓</span></span>
       <span class="ch-side">Side</span>
       <span class="ch-market">Market</span>
-      <span class="ch-time ch-sortable" onclick="setFeedSort('flow','latest')">Time <span class="sort-arrow" id="flow-sort-latest">↓</span></span>
       <span class="ch-mult">Mult</span>
       <span class="ch-profit ch-sortable" onclick="setFeedSort('flow','profit')">Winnings <span class="sort-arrow" id="flow-sort-profit"></span></span>
       <span class="ch-spent ch-sortable" onclick="setFeedSort('flow','usd')">Spent <span class="sort-arrow" id="flow-sort-usd"></span></span>
@@ -462,9 +462,9 @@
       <span>Whale Alerts ≥$3k spend / +$1k profit <span class="badge" id="whale-count">0</span></span>
     </div>
     <div class="col-headers alert-cols">
+      <span class="ch-time ch-sortable" onclick="setFeedSort('whale','latest')">Time / Address <span class="sort-arrow" id="whale-sort-latest">↓</span></span>
       <span class="ch-side">Side</span>
       <span class="ch-market">Market</span>
-      <span class="ch-time ch-sortable" onclick="setFeedSort('whale','latest')">Time <span class="sort-arrow" id="whale-sort-latest">↓</span></span>
       <span class="ch-mult">Mult</span>
       <span class="ch-profit ch-sortable" onclick="setFeedSort('whale','profit')">Winnings <span class="sort-arrow" id="whale-sort-profit"></span></span>
       <span class="ch-spent ch-sortable" onclick="setFeedSort('whale','usd')">Spent <span class="sort-arrow" id="whale-sort-usd"></span></span>
@@ -955,6 +955,10 @@ function buildFlowRowEl(row) {
     ? `<a class="pm-link" href="${pmUrl}" target="_blank" rel="noopener">${row.market_title}</a>`
     : row.market_title;
   div.innerHTML = `
+    <div class="flow-time">
+      <div class="flow-ts">${fmt.ts(row.ts)}</div>
+      <div class="flow-addr">${fmt.addr(row.address)}</div>
+    </div>
     <div class="flow-side">
       <div class="flow-side-badge ${sideCls}" title="${row.side}">${sideLabel}</div>
       <div class="flow-odds ${sideCls}">${row.price_cents}¢</div>
@@ -970,10 +974,6 @@ function buildFlowRowEl(row) {
     ${row.is_finance ? '<span class="cat-tag finance">FIN</span>' : ''}
     ${row.is_tech ? '<span class="cat-tag tech">TECH</span>' : ''}
     ${row.is_culture ? '<span class="cat-tag culture">CULT</span>' : ''}
-    <div class="flow-time">
-      <div class="flow-ts">${fmt.ts(row.ts)}</div>
-      <div class="flow-addr">${fmt.addr(row.address)}</div>
-    </div>
     <div class="flow-mult">${rMult || ''}</div>
     ${rProfit ? `<div class="flow-profit"><div class="flow-profit-amount">+${fmt.vol(row.potential_profit)}</div></div>` : '<div class="flow-profit"></div>'}
     <div class="flow-spent">
@@ -1200,6 +1200,10 @@ function buildAlertEl(a, isNew=false) {
   const titleHtml = (() => { const u = polyUrl(a.market_id); const t = a.market_title||a.market_id; return u ? `<a class="pm-link" href="${u}" target="_blank" rel="noopener">${t}</a>` : t; })();
   const addrHtml = a.whale_address ? `${fmt.addr(a.whale_address)}${pill}` : '';
   div.innerHTML = `
+    <div class="alert-time">
+      <div class="alert-ts">${fmt.ts(a.ts||new Date().toISOString())}</div>
+      <div class="alert-addr">${addrHtml}</div>
+    </div>
     <div class="alert-side">
       <div class="side-badge ${side}">${side==='yes'?'YES':side==='no'?'NO':'?'}</div>
       <div class="flow-odds ${side==='yes'?'yes':side==='no'?'no':''}">${a.price_cents}¢</div>
@@ -1215,10 +1219,6 @@ function buildAlertEl(a, isNew=false) {
     ${a.is_finance ? '<span class="cat-tag finance">FIN</span>' : ''}
     ${a.is_tech ? '<span class="cat-tag tech">TECH</span>' : ''}
     ${a.is_culture ? '<span class="cat-tag culture">CULT</span>' : ''}
-    <div class="alert-time">
-      <div class="alert-ts">${fmt.ts(a.ts||new Date().toISOString())}</div>
-      <div class="alert-addr">${addrHtml}</div>
-    </div>
     <div class="alert-mult">${mult || ''}</div>
     ${profit ? `<div class="alert-profit"><div class="alert-profit-amount">+${fmt.vol(a.potential_profit)}</div></div>` : '<div class="alert-profit"></div>'}
     <div class="alert-spent">
