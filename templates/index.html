@@ -1310,21 +1310,6 @@ function sortFeed(containerId, selector) {
   rows.sort((a, b) => parseFloat(b.dataset[attr]) - parseFloat(a.dataset[attr]));
   rows.forEach(r => feed.appendChild(r));
 }
-
-// ── Wake Lock — keep screen on ───────────────────────────────────────────────
-let _wakeLock = null;
-async function requestWakeLock() {
-  try {
-    if ('wakeLock' in navigator) {
-      _wakeLock = await navigator.wakeLock.request('screen');
-      _wakeLock.addEventListener('release', () => { _wakeLock = null; });
-    }
-  } catch(e) {}
-}
-requestWakeLock();
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') requestWakeLock();
-});
 </script>
 </body>
 </html>
