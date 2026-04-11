@@ -12,7 +12,6 @@ REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379")
 
 WHALE_THRESHOLD_USD: float = float(os.getenv("WHALE_THRESHOLD_USD", "3000"))
 WHALE_MIN_PROFIT_USD: float = float(os.getenv("WHALE_MIN_PROFIT_USD", "1000"))
-MARKET_LIMIT: int = int(os.getenv("MARKET_LIMIT", "500"))  # top N markets by 24h volume
 FLOW_THRESHOLD_USD: float = float(os.getenv("FLOW_THRESHOLD_USD", "1000"))
 PROPORTIONAL_FACTOR: float = float(os.getenv("PROPORTIONAL_FACTOR", "0.01"))
 AUTO_TRADE_ENABLED: bool = os.getenv("AUTO_TRADE_ENABLED", "true").lower() == "true"
