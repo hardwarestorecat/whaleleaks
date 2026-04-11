@@ -88,14 +88,8 @@ async def stats():
            )""",
         (db.MIN_BET_USD,),
     ).fetchone()[0]
-    from polymarket.market_cache import get_markets
-    try:
-        markets = await get_markets()
-        markets_count = len(markets)
-    except Exception:
-        markets_count = _markets_count
     return {
-        "markets_monitored": markets_count,
+        "markets_monitored": _markets_count,
         "alerts_today": alert_count_today,
         "tracked_whales": tracked_whales,
         "server_time": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
@@ -144,10 +138,15 @@ async def tracked_markets():
     from store import flow_store
     markets = await get_markets()
     highs = flow_store.get_all_market_highs()
-    return [
-        {**m, "top_fill": highs.get(m["condition_id"])}
-        for m in markets
-    ]
+    # Only return markets with recent volume or a recorded whale fill —
+    # the full 50K list is kept in-process for lookup_market() but sending
+    # it all to the browser every 10 s was the main cause of slow page loads.
+    result = []
+    for m in markets:
+        has_fill = m["condition_id"] in highs
+        if m.get("volume24hr", 0) > 0 or has_fill:
+            result.append({**m, "top_fill": highs.get(m["condition_id"])})
+    return result
 
 
 @app.get("/api/address/{address}")

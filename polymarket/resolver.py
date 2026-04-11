@@ -52,17 +52,26 @@ async def _resolve_pending() -> None:
         return
 
     log.info("Resolver checking %d unresolved conditions", len(condition_ids))
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(timezone.utc)
 
     async with aiohttp.ClientSession() as session:
         for cid in condition_ids:
-            # Skip if recently checked and still unresolved
+            # Skip only if checked very recently (within this poll interval) —
+            # a prior bug cached everything as None on first run and then skipped
+            # it forever, so we must re-check across cycles.
             cached = db.get_cached_outcome(cid)
             if cached and cached["winning_side"] is None:
-                # Already checked and unresolved — skip until next cycle
-                continue
+                try:
+                    checked_at = datetime.fromisoformat(cached["checked_at"])
+                    if checked_at.tzinfo is None:
+                        checked_at = checked_at.replace(tzinfo=timezone.utc)
+                    age_s = (now - checked_at).total_seconds()
+                    if age_s < POLL_INTERVAL:
+                        continue  # checked within this cycle, truly skip
+                except Exception:
+                    pass  # malformed timestamp — fall through and re-check
 
-            await _check_one(session, cid, now)
+            await _check_one(session, cid, now.isoformat())
             await asyncio.sleep(0.2)   # rate-limit Gamma API
 
 

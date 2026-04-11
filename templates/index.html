@@ -667,6 +667,8 @@ async function refreshToday() {
       }
     } else {
       document.getElementById('ab-markets').innerHTML = '<span class="ab-placeholder">no trades yet today</span>';
+      const hotEl = document.getElementById('top-bar-hot');
+      if (hotEl) hotEl.innerHTML = '<span class="ab-placeholder">no trades yet today</span>';
     }
     if (d.top_addresses && d.top_addresses.length) {
       document.getElementById('ab-players').innerHTML = d.top_addresses.map(a =>

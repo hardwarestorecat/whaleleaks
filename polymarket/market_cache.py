@@ -15,6 +15,7 @@ from utils.market_filter import is_geopolitical, is_sports
 log = logging.getLogger("polymarket.market_cache")
 
 _cache: list[dict] = []
+_cache_index: dict[str, dict] = {}  # condition_id → market for O(1) lookup
 _last_refresh: float = 0
 _REFRESH_INTERVAL = 120
 
@@ -24,16 +25,20 @@ async def get_markets() -> list[dict]:
     if time.time() - _last_refresh < _REFRESH_INTERVAL and _cache:
         return _cache
 
-    PAGE_SIZE = 500
+    # Fetch top MARKET_LIMIT markets by 24h volume — avoids pulling 50K+ markets
+    # per refresh cycle (was 100+ API calls ≈ 5 MB every 2 minutes).
+    market_limit = getattr(config, "MARKET_LIMIT", 500)
+    PAGE_SIZE = min(500, market_limit)
     markets: list[dict] = []
     async with aiohttp.ClientSession() as session:
         offset = 0
-        while True:
+        while len(markets) < market_limit:
+            fetch_size = min(PAGE_SIZE, market_limit - len(markets))
             url = (
                 f"{config.POLYMARKET_GAMMA_API}/markets"
                 f"?active=true&closed=false"
                 f"&order=volume24hr&ascending=false"
-                f"&limit={PAGE_SIZE}&offset={offset}"
+                f"&limit={fetch_size}&offset={offset}"
             )
             try:
                 async with session.get(url, timeout=aiohttp.ClientTimeout(total=20)) as r:
@@ -47,9 +52,9 @@ async def get_markets() -> list[dict]:
             if not page:
                 break
             markets.extend(page)
-            if len(page) < PAGE_SIZE:
+            if len(page) < fetch_size:
                 break  # last page
-            offset += PAGE_SIZE
+            offset += fetch_size
 
     result = []
     for m in markets:
@@ -96,6 +101,7 @@ async def get_markets() -> list[dict]:
         })
 
     _cache = result
+    _cache_index = {m["condition_id"]: m for m in result}
     _last_refresh = time.time()
     geo = sum(1 for m in result if m["is_geopolitical"])
     log.info("Market cache: %d markets (%d geopolitical)", len(result), geo)
@@ -103,11 +109,8 @@ async def get_markets() -> list[dict]:
 
 
 def lookup_market(condition_id: str) -> dict | None:
-    """Fast lookup by condition_id from the in-memory cache."""
-    for m in _cache:
-        if m["condition_id"] == condition_id:
-            return m
-    return None
+    """O(1) lookup by condition_id from the in-memory cache."""
+    return _cache_index.get(condition_id)
 
 
 # Backwards compat
