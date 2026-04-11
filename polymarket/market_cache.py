@@ -17,7 +17,7 @@ log = logging.getLogger("polymarket.market_cache")
 _cache: list[dict] = []
 _cache_index: dict[str, dict] = {}  # condition_id → market for O(1) lookup
 _last_refresh: float = 0
-_REFRESH_INTERVAL = 120
+_REFRESH_INTERVAL = 1800  # 30 min — market metadata changes slowly
 
 
 async def get_markets() -> list[dict]:
@@ -25,20 +25,16 @@ async def get_markets() -> list[dict]:
     if time.time() - _last_refresh < _REFRESH_INTERVAL and _cache:
         return _cache
 
-    # Fetch top MARKET_LIMIT markets by 24h volume — avoids pulling 50K+ markets
-    # per refresh cycle (was 100+ API calls ≈ 5 MB every 2 minutes).
-    market_limit = getattr(config, "MARKET_LIMIT", 500)
-    PAGE_SIZE = min(500, market_limit)
+    PAGE_SIZE = 500
     markets: list[dict] = []
     async with aiohttp.ClientSession() as session:
         offset = 0
-        while len(markets) < market_limit:
-            fetch_size = min(PAGE_SIZE, market_limit - len(markets))
+        while True:
             url = (
                 f"{config.POLYMARKET_GAMMA_API}/markets"
                 f"?active=true&closed=false"
                 f"&order=volume24hr&ascending=false"
-                f"&limit={fetch_size}&offset={offset}"
+                f"&limit={PAGE_SIZE}&offset={offset}"
             )
             try:
                 async with session.get(url, timeout=aiohttp.ClientTimeout(total=20)) as r:
@@ -52,9 +48,9 @@ async def get_markets() -> list[dict]:
             if not page:
                 break
             markets.extend(page)
-            if len(page) < fetch_size:
+            if len(page) < PAGE_SIZE:
                 break  # last page
-            offset += fetch_size
+            offset += PAGE_SIZE
 
     result = []
     for m in markets:
